@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root, [data-theme='light'] {
+  --bg: 248 249 252;
+  --surface: 255 255 255;
+  --subtle: 248 250 252;
+  --border: 226 229 235;
+  --divider: 233 236 241;
+  --text: 24 24 27;
+  --muted: 100 116 139;
+  --pink: 219 39 119;
+  --pink-soft: 252 231 243;
+  --lilac: 139 92 246;
+  --lilac-soft: 237 233 254;
+  --green: 5 150 105;
+  --green-soft: 209 250 229;
+  --red: 220 38 38;
+  --red-soft: 254 226 226;
+  --amber: 217 119 6;
+  --amber-soft: 254 243 199;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: 13 11 20;
+  --surface: 23 20 32;
+  --subtle: 30 26 41;
+  --border: 52 46 66;
+  --divider: 42 37 54;
+  --text: 244 244 245;
+  --muted: 161 161 178;
+  --pink: 236 72 153;
+  --pink-soft: 74 22 52;
+  --lilac: 167 139 250;
+  --lilac-soft: 46 35 82;
+  --green: 52 211 153;
+  --green-soft: 6 60 46;
+  --red: 248 113 113;
+  --red-soft: 76 22 26;
+  --amber: 251 191 36;
+  --amber-soft: 70 46 8;
+  color-scheme: dark;
+}
+
+html, body { background: rgb(var(--bg)); color: rgb(var(--text)); }
+body { font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Range slider: native input for touch/keyboard, styled track drawn by the component */
+input[type='range'].dg-range { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; height: 28px; cursor: pointer; position: relative; z-index: 1; margin: 0; }
+input[type='range'].dg-range:focus { outline: none; }
+input[type='range'].dg-range::-webkit-slider-runnable-track { height: 6px; background: transparent; }
+input[type='range'].dg-range::-moz-range-track { height: 6px; background: transparent; }
+input[type='range'].dg-range::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 999px; background: rgb(var(--surface)); border: 2px solid rgb(var(--pink)); box-shadow: 0 1px 4px rgb(0 0 0 / .18); transition: transform .15s; }
+input[type='range'].dg-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 999px; background: rgb(var(--surface)); border: 2px solid rgb(var(--pink)); }
+input[type='range'].dg-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+input[type='range'].dg-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgb(var(--pink) / .25); }
+
+input[type='number']::-webkit-inner-spin-button { opacity: .4; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
