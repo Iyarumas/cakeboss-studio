@@ -11,6 +11,7 @@ import { AnimatedCounter, ConfirmDialog, Drawer, Modal, stagger, useToast } from
 import { newCustomer } from './Customers';
 import { WhatsAppDialog } from '../components/WhatsAppDialog';
 import { addressLine } from '../lib/shop';
+import { CakeQuoteModal } from '../components/CakeQuoteModal';
 import { orderVars } from '../lib/whatsapp';
 import { MessageCircle } from 'lucide-react';
 
@@ -81,7 +82,9 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.get('novo')]);
 
+  const [cakeFirst, setCakeFirst] = useState(false);
   const close = () => {
+    setCakeFirst(false);
     setEditing(null);
     if (params.get('pedido')) {
       params.delete('pedido');
@@ -97,9 +100,19 @@ export default function OrdersPage() {
         title="Pedidos"
         subtitle="Encomendas, orçamentos, entregas e pagamentos."
         actions={
-          <Button variant="primary" onClick={() => setEditing({ ...newOrder(), customerId: customerFilter, customerName: customerName ?? '' })}>
-            <Plus size={16} /> Novo pedido
-          </Button>
+          <>
+            <Button
+              onClick={() => {
+                setCakeFirst(true);
+                setEditing({ ...newOrder(), customerId: customerFilter, customerName: customerName ?? '' });
+              }}
+            >
+              🎂 Orçamento de bolo
+            </Button>
+            <Button variant="primary" onClick={() => setEditing({ ...newOrder(), customerId: customerFilter, customerName: customerName ?? '' })}>
+              <Plus size={16} /> Novo pedido
+            </Button>
+          </>
         }
       />
       <motion.div variants={stagger.item}>
@@ -208,19 +221,20 @@ export default function OrdersPage() {
       </motion.div>
 
       <Drawer open={!!editing} onClose={close} width="max-w-2xl" title={editing && db.orders.some((x) => x.id === editing.id) ? `Pedido #${db.orders.find((x) => x.id === editing.id)!.number}` : 'Novo pedido'}>
-        {editing && <OrderEditor key={editing.id} initial={editing} onDone={close} />}
+        {editing && <OrderEditor key={editing.id} initial={editing} onDone={close} startWithCake={cakeFirst} />}
       </Drawer>
     </motion.div>
   );
 }
 
-function OrderEditor({ initial, onDone }: { initial: Order; onDone: () => void }) {
+function OrderEditor({ initial, onDone, startWithCake }: { initial: Order; onDone: () => void; startWithCake?: boolean }) {
   const { db, ctx, saveOrder, saveCustomer, deleteOrder, registerPayment, deleteTransaction } = useStore();
   const toast = useToast();
   const [o, setO] = useState<Order>(initial);
   const [newCust, setNewCust] = useState<{ name: string; phone: string } | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
+  const [cakeOpen, setCakeOpen] = useState(!!startWithCake);
   const [del, setDel] = useState(false);
   const saved = db.orders.find((x) => x.id === o.id);
   const t = orderTotals(o, db.transactions, db.recipes, ctx);
@@ -417,6 +431,9 @@ function OrderEditor({ initial, onDone }: { initial: Order; onDone: () => void }
             <Button size="sm" variant="ghost" onClick={() => addItem(null)}>
               <Plus size={14} /> Item avulso
             </Button>
+            <Button size="sm" onClick={() => setCakeOpen(true)}>
+              🎂 Montar bolo
+            </Button>
           </div>
         </Card>
 
@@ -519,6 +536,7 @@ function OrderEditor({ initial, onDone }: { initial: Order; onDone: () => void }
         </div>
       </div>
 
+      <CakeQuoteModal open={cakeOpen} onClose={() => setCakeOpen(false)} onAdd={(item) => setO({ ...o, items: [...o.items, item] })} />
       <WhatsAppDialog
         open={waOpen}
         onClose={() => setWaOpen(false)}

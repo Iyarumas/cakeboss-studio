@@ -18,6 +18,7 @@ const NAV: { group: string; items: { to: string; label: string; icon: ReactNode;
       { to: '/materiais', label: 'Embalagens e adesivos', icon: <Package size={18} /> },
       { to: '/compras', label: 'Compras', icon: <ShoppingCart size={18} /> },
       { to: '/fichas', label: 'Fichas técnicas', icon: <ClipboardList size={18} /> },
+      { to: '/fichas?aba=bolos', label: 'Bolos de aniversário', icon: <Cake size={18} /> },
       { to: '/producoes', label: 'Produções', icon: <Factory size={18} /> },
       { to: '/estoque', label: 'Estoque', icon: <Boxes size={18} /> },
     ],
@@ -49,6 +50,9 @@ const NAV: { group: string; items: { to: string; label: string; icon: ReactNode;
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { db, updateSettings } = useStore();
+  const loc = useLocation();
+  // "/fichas" and "/fichas?aba=bolos" share a path: tell them apart by the query
+  const activeFor = (to: string, isActive: boolean) => (to.startsWith('/fichas') ? isActive && (to.includes('aba=bolos') === loc.search.includes('aba=bolos')) : isActive);
   const lowStock =
     db.ingredients.filter((i) => i.minStock > 0 && i.stock <= i.minStock).length + db.materials.filter((m) => m.minStock > 0 && m.stock <= m.minStock).length;
   const dark = db.settings.theme === 'dark';
@@ -82,11 +86,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     className={({ isActive }) =>
                       cx(
                         'relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors',
-                        isActive ? 'text-pink' : 'text-muted hover:bg-subtle hover:text-ink',
+                        activeFor(it.to, isActive) ? 'text-pink' : 'text-muted hover:bg-subtle hover:text-ink',
                       )
                     }
                   >
-                    {({ isActive }) => (
+                    {({ isActive: navActive }) => {
+                      const isActive = activeFor(it.to, navActive);
+                      return (
                       <>
                         {isActive && (
                           <motion.span layoutId="nav-active" className="absolute inset-0 rounded-lg border border-pink/20 bg-pink-soft" transition={{ type: 'spring', stiffness: 500, damping: 40 }} />
@@ -101,7 +107,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                         )}
                         {it.to === '/estoque' && lowStock > 0 && <span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-warn px-1.5 text-[11px] font-semibold text-white">{lowStock}</span>}
                       </>
-                    )}
+                      );
+                    }}
                   </NavLink>
                 </li>
               ))}
