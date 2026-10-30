@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-label="CakeBoss Studio — gestão de confeitaria e loja online">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FCE7F3"/>
+      <stop offset="0.55" stop-color="#F8F9FC"/>
+      <stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#DB2777"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F472B6" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#F472B6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="420" rx="28" fill="url(#bg)"/>
+  <circle cx="1010" cy="210" r="210" fill="url(#glow)"/>
+
+  <!-- sprinkles -->
+  <g opacity="0.8">
+    <rect x="120" y="60" width="18" height="6" rx="3" fill="#FDE047" transform="rotate(25 120 60)"/>
+    <rect x="640" y="48" width="18" height="6" rx="3" fill="#67E8F9" transform="rotate(-30 640 48)"/>
+    <rect x="760" y="360" width="18" height="6" rx="3" fill="#F472B6" transform="rotate(40 760 360)"/>
+    <rect x="90" y="350" width="18" height="6" rx="3" fill="#8B5CF6" transform="rotate(-15 90 350)"/>
+    <rect x="1220" y="70" width="18" height="6" rx="3" fill="#86EFAC" transform="rotate(60 1220 70)"/>
+    <rect x="1180" y="370" width="18" height="6" rx="3" fill="#FDE047" transform="rotate(-50 1180 370)"/>
+  </g>
+
+  <!-- text -->
+  <text x="96" y="150" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#DB2777" letter-spacing="4">CONFEITARIA · GESTÃO · LOJA ONLINE</text>
+  <text x="92" y="235" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="86" font-weight="800" fill="url(#title)">CakeBoss Studio</text>
+  <text x="96" y="292" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" fill="#64748B">Preço certo, estoque em dia e pedidos chegando</text>
+  <text x="96" y="328" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" fill="#64748B">— tudo num lugar só.</text>
+
+  <!-- cake (three tiers) -->
+  <g transform="translate(900 92)">
+    <ellipse cx="110" cy="262" rx="150" ry="16" fill="#000" opacity="0.08"/>
+    <rect x="-20" y="244" width="260" height="14" rx="7" fill="#FFFFFF"/>
+    <rect x="0" y="170" width="220" height="78" rx="10" fill="#F9A8D4"/>
+    <rect x="30" y="104" width="160" height="70" rx="10" fill="#FFE4E6"/>
+    <rect x="58" y="48" width="104" height="60" rx="10" fill="#EC4899"/>
+    <path d="M0 176 Q14 196 28 176 Q42 200 56 176 Q70 194 84 176 Q98 202 112 176 Q126 194 140 176 Q154 200 168 176 Q182 194 196 176 Q208 198 220 176 L220 170 L0 170 Z" fill="#FFF7ED"/>
+    <path d="M30 110 Q44 128 58 110 Q72 132 86 110 Q100 126 114 110 Q128 132 142 110 Q156 126 170 110 Q180 128 190 110 L190 104 L30 104 Z" fill="#F472B6"/>
+    <path d="M58 54 Q70 70 82 54 Q94 74 106 54 Q118 70 130 54 Q142 72 154 54 Q158 62 162 54 L162 48 L58 48 Z" fill="#FFF7ED"/>
+    <circle cx="94" cy="40" r="12" fill="#DC2626"/>
+    <circle cx="126" cy="38" r="12" fill="#DC2626"/>
+    <path d="M96 30 Q100 14 112 8 M128 28 Q126 14 114 8" stroke="#15803D" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="90" cy="36" r="3.5" fill="#fff" opacity="0.8"/>
+    <circle cx="122" cy="34" r="3.5" fill="#fff" opacity="0.8"/>
+  </g>
+</svg>
