@@ -101,8 +101,9 @@ Regras principais:
 | Plus | R$ 129,90/mês | + `mensagens`, `relatorios_avancados` |
 
 - Preços e recursos ficam **só na tabela `plans`**. Mudar um preço é um `UPDATE`; o app e a landing leem de lá.
-- Estados da assinatura: `billing_not_configured`, `pending_payment`, `active`, `past_due`, `canceled`, `expired`, `test_grant`.
-- **Cobrança do CakeBoss desconfigurada (decisão do proprietário):** `choose_plan` registra o plano escolhido como `billing_not_configured`, que **não libera recursos pagos** e nunca aparece como pago. A ativação real só acontece quando a Edge Function de cobrança receber a confirmação do gateway, depois de você configurar suas credenciais.
+- Estados da assinatura: `trialing`, `billing_not_configured`, `pending_payment`, `active`, `past_due`, `canceled`, `expired`, `test_grant`.
+- **Teste grátis (decidido em 01/11):** a primeira escolha de plano de cada confeitaria abre **14 dias de teste** do plano escolhido (`trialing`). Dá para trocar de plano durante o teste sem mudar a data de fim. É uma vez por confeitaria e nunca aparece como pago. Ao vencer, os recursos pagos param (os dados continuam guardados e visíveis) até haver assinatura paga.
+- **Cobrança do CakeBoss desconfigurada (decisão do proprietário):** depois do teste, `choose_plan` registra o plano escolhido como `billing_not_configured`, que **não libera recursos pagos** e nunca aparece como pago. A ativação real só acontece quando a Edge Function de cobrança receber a confirmação do gateway, depois de você configurar suas credenciais.
 - **Testes de plano:** só por concessão administrativa (`test_grant`), com motivo e autor obrigatórios, feita por quem está em `platform_admins`. Não existe caminho público para isso.
 - **Upgrade/downgrade:** upgrade cobra a diferença pelo gateway; downgrade fica agendado (`scheduled_plan_code`) para a renovação. Cancelamento: `cancel_at_period_end`.
 - **Futuro painel financeiro central:** `saas_products.code = 'cakeboss'` + `subscriptions` + `billing_events` (valor, status, provedor, id da transação, reembolsos, cancelamentos, datas). Sem exposição pública; quando for feito, será uma API administrativa autenticada. Os recebimentos das confeitarias (`payments`) ficam em tabelas separadas e nunca se misturam com a receita do CakeBoss.
@@ -164,7 +165,7 @@ Economia: um projeto de cada; consultas por índice começando em `workspace_id`
   7. funcionária não exclui nem mexe em pagamentos;
   8. vitrine pública não expõe fichas, custos ou clientes, e não oferece pagamento online sem gateway;
   9. comprador vê só os próprios pedidos;
-  10. plano escolhido sem cobrança configurada não libera recurso pago.
+  10. conta nova ganha 14 dias de teste uma vez só; vencido o teste e sem cobrança, nada pago fica liberado nem é gravado, e o teste nunca vira "pago".
 
 Para repetir:
 
@@ -177,7 +178,7 @@ docker rm -f cakeboss-pgtest
 
 ## 11. Decisões que dependem de você
 
-1. **Acesso de quem acaba de criar conta**, enquanto a cobrança do CakeBoss não existe. Pela regra atual, sem assinatura paga ou concessão a conta nova **não consegue gravar nada**. Opções: (a) período de teste grátis (quantos dias?), marcado como teste e nunca como pago; (b) só por concessão manual sua. Recomendo (a), com 14 dias.
+1. ~~Acesso de quem acaba de criar conta~~ — **decidido: teste grátis de 14 dias** (seção 5).
 2. **Contas que já existem** (a sua e a da sua esposa): a migração dá uma concessão explícita do plano equivalente (`loja → Premium`). Se quiser outro plano para elas, é só dizer.
 3. **Stripe no Brasil** — confirmar antes da Fase 9.
 4. **Credenciais de teste** do Mercado Pago (aplicativo de desenvolvedor) para a Fase 9.

@@ -52,13 +52,15 @@ alter table public.platform_admins enable row level security;
 --   pending_payment:       aguardando o gateway confirmar
 --   active / past_due / canceled / expired: estados do gateway
 --   test_grant:            concessão administrativa explícita (teste ou cortesia), nunca "paga"
+--   trialing:              teste grátis de 14 dias, uma vez por confeitaria, nunca "pago"
 -- ---------------------------------------------------------------------------
 create table public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   product_code text not null default 'cakeboss' references public.saas_products(code),
   plan_code text not null references public.plans(code),
-  status text not null check (status in ('billing_not_configured', 'pending_payment', 'active', 'past_due', 'canceled', 'expired', 'test_grant')),
+  status text not null check (status in ('billing_not_configured', 'pending_payment', 'active', 'past_due', 'canceled', 'expired', 'test_grant', 'trialing')),
+  trial_ends_at timestamptz,
   provider text check (provider in ('mercadopago', 'stripe')),
   provider_subscription_id text,
   price_cents integer not null,
@@ -75,6 +77,7 @@ create table public.subscriptions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint test_grant_has_reason check (status <> 'test_grant' or (grant_reason is not null and granted_by is not null)),
+  constraint trial_has_end check (status <> 'trialing' or trial_ends_at is not null),
   unique (provider, provider_subscription_id)
 );
 -- uma assinatura corrente por confeitaria
@@ -128,6 +131,7 @@ returns text[] language sql stable security definer set search_path = '' as $$
        and (
          s.status in ('active', 'past_due')
          or (s.status = 'test_grant' and (s.grant_expires_at is null or s.grant_expires_at > now()))
+         or (s.status = 'trialing' and s.trial_ends_at > now())
        )
      order by s.created_at desc
      limit 1
@@ -155,7 +159,8 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'subscription', (
       select jsonb_build_object('plan', s.plan_code, 'status', s.status, 'period_end', s.current_period_end,
                                 'cancel_at_period_end', s.cancel_at_period_end, 'is_grant', s.status = 'test_grant',
-                                'grant_expires_at', s.grant_expires_at, 'scheduled_plan', s.scheduled_plan_code)
+                                'grant_expires_at', s.grant_expires_at, 'scheduled_plan', s.scheduled_plan_code,
+                                'trial_ends_at', s.trial_ends_at)
         from public.subscriptions s where s.workspace_id = ws and s.status not in ('canceled', 'expired')
        order by s.created_at desc limit 1)
   ) end;
@@ -163,13 +168,18 @@ $$;
 revoke all on function public.my_workspace_access(uuid) from public, anon;
 grant execute on function public.my_workspace_access(uuid) to authenticated;
 
--- Escolha de plano pelo dono. Enquanto não houver gateway de assinaturas, a escolha fica registrada
--- como 'billing_not_configured' e NÃO libera recursos pagos. A ativação real vem só do servidor.
+-- Escolha de plano pelo dono.
+--  · primeira vez da confeitaria: teste grátis de 14 dias do plano escolhido ('trialing');
+--  · durante o teste: pode trocar de plano, a data de fim continua a mesma;
+--  · depois do teste (ou se já teve um): fica 'billing_not_configured' e NÃO libera recursos pagos
+--    enquanto a cobrança do CakeBoss não existir. A ativação paga vem só do servidor.
 create or replace function public.choose_plan(ws uuid, plan text)
 returns text language plpgsql security definer set search_path = '' as $$
 declare
   p public.plans%rowtype;
   cur public.subscriptions%rowtype;
+  had_trial boolean;
+  result text;
 begin
   if not private.is_manager(ws) then raise exception 'forbidden' using errcode = '42501'; end if;
   select * into p from public.plans where code = plan and active;
@@ -179,15 +189,30 @@ begin
     -- upgrade/downgrade de assinatura paga passam pelo gateway (Edge Function billing)
     raise exception 'troca de plano precisa do sistema de cobrança' using errcode = 'P0001';
   end if;
-  if found then
+  had_trial := exists (select 1 from public.subscriptions s where s.workspace_id = ws and s.trial_ends_at is not null);
+
+  if found and cur.status = 'trialing' and cur.trial_ends_at > now() then
     update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, updated_at = now() where id = cur.id;
+    result := 'trialing';
+  elsif found then
+    -- teste vencido ou escolha anterior sem cobrança
+    update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, status = 'billing_not_configured', updated_at = now() where id = cur.id;
+    result := 'billing_not_configured';
+  elsif not had_trial then
+    insert into public.subscriptions (workspace_id, plan_code, status, price_cents, trial_ends_at, current_period_start, current_period_end)
+    values (ws, p.code, 'trialing', p.price_cents, now() + interval '14 days', now(), now() + interval '14 days');
+    result := 'trialing';
   else
     insert into public.subscriptions (workspace_id, plan_code, status, price_cents) values (ws, p.code, 'billing_not_configured', p.price_cents);
+    result := 'billing_not_configured';
   end if;
+
   insert into public.billing_events (subscription_id, workspace_id, kind, status, amount_cents, detail)
-  select id, ws, 'status_change', 'info', p.price_cents, jsonb_build_object('plano_escolhido', p.code, 'cobranca', 'nao_configurada')
-    from public.subscriptions where workspace_id = ws and status = 'billing_not_configured';
-  return 'billing_not_configured';
+  select s.id, ws, 'status_change', 'info', 0,
+         jsonb_build_object('plano_escolhido', p.code, 'estado', result, 'teste_ate', s.trial_ends_at, 'cobranca', 'nao_configurada')
+    from public.subscriptions s where s.workspace_id = ws and s.status in ('trialing', 'billing_not_configured')
+   order by s.created_at desc limit 1;
+  return result;
 end;
 $$;
 revoke all on function public.choose_plan(uuid, text) from public, anon;

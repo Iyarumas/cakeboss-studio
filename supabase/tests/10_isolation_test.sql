@@ -140,16 +140,34 @@ do $$ begin
 end $$;
 reset role;
 
--- 10. Escolha de plano sem cobrança configurada não libera recurso pago
+-- 10. Conta nova: teste grátis de 14 dias, uma vez só; depois, sem cobrança, nada pago fica liberado
 do $$ declare ws uuid; begin
   insert into auth.users values ('55555555-5555-5555-5555-555555555555', 'nova@teste');
   perform set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false);
   set local role authenticated;
   ws := public.create_workspace('Doces Novos', '{"settings": {"ownerName": "Nova"}}');
-  assert public.choose_plan(ws, 'plus') = 'billing_not_configured', 'estado de cobrança';
-  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'plano não pago liberou recursos';
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'conta sem plano liberou recursos';
+  assert public.choose_plan(ws, 'plus') = 'trialing', 'primeira escolha deveria abrir o teste';
+  assert public.my_workspace_access(ws)->'features' ? 'mensagens', 'teste do Plus deveria liberar mensagens';
+  assert (public.my_workspace_access(ws)#>>'{subscription,trial_ends_at}')::timestamptz between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour', 'teste de 14 dias';
+  -- troca de plano durante o teste mantém a data de fim
+  assert public.choose_plan(ws, 'basico') = 'trialing', 'troca durante o teste';
+  assert not (public.my_workspace_access(ws)->'features' ? 'loja'), 'Básico em teste liberou loja';
+  -- vencimento do teste (simulado pelo servidor)
   reset role;
-  raise notice 'ok 10: plano escolhido sem cobrança não libera nada';
+  update public.subscriptions set trial_ends_at = now() - interval '1 minute' where workspace_id = ws;
+  set local role authenticated;
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'teste vencido continuou liberado';
+  assert public.choose_plan(ws, 'premium') = 'billing_not_configured', 'segundo teste não pode existir';
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'escolha sem cobrança liberou recursos';
+  begin
+    insert into public.recipes (workspace_id, id, name, composition) values (ws, 'r', 'x', '{}');
+    raise exception 'FALHOU: gravou sem plano ativo';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+  assert not exists (select 1 from public.subscriptions where workspace_id = ws and status in ('active', 'past_due')), 'teste virou pago';
+  raise notice 'ok 10: teste grátis de 14 dias, uma vez só, nunca marcado como pago';
 end $$;
 
 select 'TODOS OS TESTES PASSARAM' as resultado;
