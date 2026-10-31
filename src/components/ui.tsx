@@ -24,7 +24,9 @@ export function CardHeader({ title, subtitle, icon, actions, className }: { titl
 }
 
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-const btnBase = 'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40 disabled:cursor-not-allowed disabled:opacity-50';
+// a slight press-in on :active confirms the click was heard
+const btnBase =
+  'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40 disabled:cursor-not-allowed disabled:opacity-50';
 const btnVariant: Record<BtnVariant, string> = {
   primary: 'bg-pink text-white hover:bg-pink/90 shadow-sm',
   secondary: 'border border-line bg-surface text-ink hover:bg-subtle',

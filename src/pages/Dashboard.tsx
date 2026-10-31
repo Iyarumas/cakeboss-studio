@@ -2,11 +2,34 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { ArrowRight, Boxes, Calculator, ClipboardList, Clock, Flame, Percent, ScrollText, ShoppingBag, Sparkles, TriangleAlert, Wallet, Wheat } from 'lucide-react';
+import {
+  ArrowRight,
+  Boxes,
+  Calculator,
+  CalendarClock,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Flame,
+  ListChecks,
+  MessageCircle,
+  Percent,
+  Plus,
+  ScrollText,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  TrendingUp,
+  TriangleAlert,
+  Truck,
+  Wallet,
+  Wheat,
+} from 'lucide-react';
 import { useStore } from '../store/store';
 import { CATEGORIES, computePricing, defaultParams, priceRecipe, type CostCategory } from '../lib/pricing';
 import { dateTime, money, monthKey, number, pct, qtyBase } from '../lib/format';
-import { orderTotals } from '../lib/orders';
+import { isOpen, orderTotals } from '../lib/orders';
 import { UpcomingOrders } from './Orders';
 import { Button, Card, CardHeader, Select, SliderField, cx } from '../components/ui';
 import { AnimatedCounter, stagger } from '../components/motion';
@@ -108,6 +131,139 @@ function PricingWidget() {
   );
 }
 
+const greeting = (h: number) => (h < 5 ? 'Boa noite' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite');
+const longDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+// "sábado, 31 de outubro" → "Sábado, 31 de outubro" (CSS capitalize would also raise "De")
+const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** What needs attention today, each line linking to where it gets done. Lines with nothing to do drop out. */
+function TodayCard({ lowStock }: { lowStock: number }) {
+  const { db, ctx } = useStore();
+  const now = new Date();
+  const endToday = new Date(now);
+  endToday.setHours(23, 59, 59, 999);
+  const endTomorrow = new Date(endToday);
+  endTomorrow.setDate(endTomorrow.getDate() + 1);
+  const open = db.orders.filter((o) => isOpen(o.status) && o.status !== 'orcamento');
+  const late = open.filter((o) => new Date(o.deliveryAt) < now).length;
+  const today = open.filter((o) => { const d = new Date(o.deliveryAt); return d >= now && d <= endToday; }).length;
+  const tomorrow = open.filter((o) => { const d = new Date(o.deliveryAt); return d > endToday && d <= endTomorrow; }).length;
+  const quotes = db.orders.filter((o) => o.status === 'orcamento').length;
+  const fromShop = open.filter((o) => o.origin === 'loja' && o.status === 'confirmado').length;
+  const unpaid = db.orders
+    .filter((o) => (o.status === 'pronto' || o.status === 'entregue') && orderTotals(o, db.transactions, db.recipes, ctx).remaining > 0.009)
+    .length;
+
+  const rows = [
+    { n: late, label: late === 1 ? 'pedido atrasado' : 'pedidos atrasados', to: '/pedidos', tone: 'red' as const, icon: <TriangleAlert size={16} /> },
+    { n: today, label: today === 1 ? 'entrega hoje' : 'entregas hoje', to: '/pedidos', tone: 'pink' as const, icon: <Truck size={16} /> },
+    { n: tomorrow, label: tomorrow === 1 ? 'entrega amanhã' : 'entregas amanhã', to: '/pedidos', tone: 'lilac' as const, icon: <CalendarClock size={16} /> },
+    { n: fromShop, label: fromShop === 1 ? 'pedido novo da loja' : 'pedidos novos da loja', to: '/pedidos', tone: 'pink' as const, icon: <Store size={16} /> },
+    { n: unpaid, label: unpaid === 1 ? 'pedido pronto sem pagamento completo' : 'pedidos prontos sem pagamento completo', to: '/pedidos?filtro=todos', tone: 'amber' as const, icon: <Wallet size={16} /> },
+    { n: quotes, label: quotes === 1 ? 'orçamento esperando resposta' : 'orçamentos esperando resposta', to: '/pedidos?filtro=orcamento', tone: 'lilac' as const, icon: <MessageCircle size={16} /> },
+    { n: lowStock, label: lowStock === 1 ? 'item com estoque baixo' : 'itens com estoque baixo', to: '/estoque', tone: 'amber' as const, icon: <Boxes size={16} /> },
+  ].filter((r) => r.n > 0);
+  const tone = { red: 'bg-loss-soft text-loss', pink: 'bg-pink-soft text-pink', lilac: 'bg-lilac-soft text-lilac', amber: 'bg-warn-soft text-warn' };
+
+  return (
+    <Card className="flex h-full flex-col">
+      <CardHeader icon={<ListChecks size={16} />} title="Para hoje" subtitle="O que precisa da sua atenção" />
+      {rows.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 px-6 py-8 text-center">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-profit-soft text-profit">
+            <Check size={18} />
+          </span>
+          <p className="mt-2 text-sm font-medium">Tudo em dia</p>
+          <p className="text-sm text-muted">Sem entregas, atrasos ou pendências por agora.</p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-divider">
+          {rows.map((r) => (
+            <li key={r.label}>
+              <Link to={r.to} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-subtle/60">
+                <span className={cx('grid h-8 w-8 shrink-0 place-items-center rounded-lg', tone[r.tone])}>{r.icon}</span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <b className="tabular font-semibold">{r.n}</b> {r.label}
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-muted transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-ink" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/** Money in and out over the last six months, from Financeiro. */
+function CashflowCard() {
+  const { db } = useStore();
+  const navigate = useNavigate();
+  const data = useMemo(() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(d).replace('.', '') };
+    });
+    return months.map((m) => {
+      const tx = db.transactions.filter((t) => monthKey(t.date) === m.key);
+      const entradas = tx.filter((t) => t.type === 'entrada').reduce((a, t) => a + t.amount, 0);
+      const saidas = tx.filter((t) => t.type === 'saida').reduce((a, t) => a + t.amount, 0);
+      return { ...m, entradas, saidas, saldo: entradas - saidas };
+    });
+  }, [db.transactions]);
+  const total = data.reduce((a, m) => a + m.saldo, 0);
+  const hasData = data.some((m) => m.entradas || m.saidas);
+
+  return (
+    <Card className="flex h-full flex-col">
+      <CardHeader
+        icon={<TrendingUp size={16} />}
+        title="Entradas e saídas"
+        subtitle={hasData ? <>Últimos 6 meses · saldo <b className={cx('tabular', total >= 0 ? 'text-profit' : 'text-loss')}>{money(total)}</b></> : 'Últimos 6 meses'}
+        actions={
+          <Button size="sm" onClick={() => navigate('/financeiro')}>
+            Financeiro
+          </Button>
+        }
+      />
+      {!hasData ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center text-sm text-muted">
+          Os pagamentos dos pedidos e as compras lançadas aparecem aqui, mês a mês.
+          <Button className="mt-3" size="sm" onClick={() => navigate('/pedidos?novo=1')}>
+            <Plus size={14} /> Novo pedido
+          </Button>
+        </div>
+      ) : (
+        <div className="min-h-[240px] flex-1 px-2 pb-3 pt-4">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={data} margin={{ left: 4, right: 12 }} barGap={4}>
+              <CartesianGrid vertical={false} stroke="rgb(var(--divider))" />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'rgb(var(--muted))' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'rgb(var(--muted))' }} axisLine={false} tickLine={false} width={64} tickFormatter={(v: number) => money(v).replace(',00', '')} />
+              <Tooltip
+                cursor={{ fill: 'rgb(var(--subtle))' }}
+                content={({ active, payload }) =>
+                  active && payload?.[0] ? (
+                    <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-pop">
+                      <div className="mb-1 font-semibold capitalize">{payload[0].payload.label}</div>
+                      <div className="text-profit">Entradas {money(payload[0].payload.entradas)}</div>
+                      <div className="text-loss">Saídas {money(payload[0].payload.saidas)}</div>
+                      <div className="mt-1 border-t border-divider pt-1 font-medium">Saldo {money(payload[0].payload.saldo)}</div>
+                    </div>
+                  ) : null
+                }
+              />
+              <Bar dataKey="entradas" fill="rgb(var(--green))" radius={[5, 5, 0, 0]} maxBarSize={28} animationDuration={400} />
+              <Bar dataKey="saidas" fill="rgb(var(--red) / 0.75)" radius={[5, 5, 0, 0]} maxBarSize={28} animationDuration={400} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { db, ctx, loadSample } = useStore();
   const navigate = useNavigate();
@@ -141,8 +297,13 @@ export default function Dashboard() {
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show">
       <motion.div variants={stagger.item} className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Olá{owner ? `, ${owner}` : ''}! 👋</h1>
-        <p className="mt-1 text-sm text-muted">Resumo dos custos e preços da {db.settings.businessName || 'sua confeitaria'}.</p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {greeting(new Date().getHours())}
+          {owner ? `, ${owner}` : ''}
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          {upperFirst(longDate.format(new Date()))} · {db.settings.businessName || 'sua confeitaria'}
+        </p>
       </motion.div>
 
       {db.recipes.length === 0 ? (
@@ -179,8 +340,14 @@ export default function Dashboard() {
         </motion.div>
       ) : (
         <>
+          {/* on a phone the day's to-do list comes before the numbers */}
+          <motion.div variants={stagger.item} className="mb-4 md:hidden">
+            <TodayCard lowStock={lowStock.length} />
+          </motion.div>
+          {/* money first: it is what the day is measured by */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi label="Fichas técnicas" value={db.recipes.length} icon={<ClipboardList size={16} />} foot={`${db.recipes.length - withPrice.length} sem preço oficial`} />
+            <Kpi label="Recebido no mês" value={<AnimatedCounter value={received} format={money} />} icon={<Wallet size={16} />} tone="green" foot={`saídas ${money(spent)}`} />
+            <Kpi label="A receber" value={<AnimatedCounter value={receivable} format={money} />} icon={<Clock size={16} />} tone="amber" foot="pedidos confirmados" />
             <Kpi
               label="Margem média"
               value={<AnimatedCounter value={avgMargin} format={(v) => pct(v)} />}
@@ -189,12 +356,34 @@ export default function Dashboard() {
               foot="produtos com preço"
             />
             <Kpi label="Abaixo da margem" value={belowTarget.length} icon={<TriangleAlert size={16} />} tone={belowTarget.length ? 'red' : 'green'} foot="margem < desejada" />
-            <Kpi label="Recebido no mês" value={<AnimatedCounter value={received} format={money} />} icon={<Wallet size={16} />} tone="green" foot={`saídas ${money(spent)}`} />
-            <Kpi label="A receber" value={<AnimatedCounter value={receivable} format={money} />} icon={<Clock size={16} />} tone="amber" foot="pedidos confirmados" />
             <Kpi label="Estoque baixo" value={lowStock.length} icon={<Boxes size={16} />} tone={lowStock.length ? 'amber' : 'green'} foot="itens no mínimo" />
+            <Kpi label="Fichas técnicas" value={db.recipes.length} icon={<ClipboardList size={16} />} foot={`${db.recipes.length - withPrice.length} sem preço oficial`} />
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <motion.div variants={stagger.item} className="hidden md:block xl:col-span-5">
+              <TodayCard lowStock={lowStock.length} />
+            </motion.div>
+            <motion.div variants={stagger.item} className="xl:col-span-7">
+              <CashflowCard />
+            </motion.div>
+
+            <motion.div variants={stagger.item} className="xl:col-span-12">
+              <Card>
+                <CardHeader
+                  icon={<ShoppingBag size={16} />}
+                  title="Próximos pedidos"
+                  subtitle="Confirmados, em produção e prontos"
+                  actions={
+                    <Button size="sm" onClick={() => navigate('/pedidos')}>
+                      Ver pedidos
+                    </Button>
+                  }
+                />
+                <UpcomingOrders limit={6} />
+              </Card>
+            </motion.div>
+
             <motion.div variants={stagger.item} className="xl:col-span-5">
               <PricingWidget />
             </motion.div>
@@ -232,22 +421,6 @@ export default function Dashboard() {
                     </ResponsiveContainer>
                   </div>
                 )}
-              </Card>
-            </motion.div>
-
-            <motion.div variants={stagger.item} className="xl:col-span-12">
-              <Card>
-                <CardHeader
-                  icon={<ShoppingBag size={16} />}
-                  title="Próximos pedidos"
-                  subtitle="Confirmados, em produção e prontos"
-                  actions={
-                    <Button size="sm" onClick={() => navigate('/pedidos')}>
-                      Ver pedidos
-                    </Button>
-                  }
-                />
-                <UpcomingOrders limit={6} />
               </Card>
             </motion.div>
 

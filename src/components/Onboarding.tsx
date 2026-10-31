@@ -119,9 +119,9 @@ export function Onboarding() {
                     initial={{ opacity: 0, scale: 0.6, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.1 }}
-                    className="bg-gradient-to-r from-pink to-lilac bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-7xl"
+                    className="text-5xl font-extrabold tracking-tight text-ink sm:text-7xl"
                   >
-                    Olá, {first}!
+                    Olá, <span className="text-pink">{first}</span>!
                   </motion.h1>
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-3 text-base text-muted sm:text-lg">
                     Que bom ter você aqui. Vamos adoçar a gestão? 🧁

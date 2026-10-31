@@ -1,61 +1,23 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Store, ShoppingCart, ShoppingBag, Users, Wallet, Boxes, Calculator, Cake, ClipboardList, Factory, LayoutDashboard, Menu, Moon, Package, ScrollText, Settings, Sparkles, Sun, Wheat, X, Flame } from 'lucide-react';
+import { ArrowUpRight, Cake, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
 import { useStore } from '../store/store';
-import { cx } from '../components/ui';
+import { Button, IconButton, cx } from '../components/ui';
 import { useToast } from '../components/motion';
 import { Mascot } from '../components/mascot/Mascot';
 import { Onboarding } from '../components/Onboarding';
+import { CommandPaletteProvider, isMac, useCommandPalette } from '../components/CommandPalette';
 import { qtyBase } from '../lib/format';
-
-const NAV: { group: string; items: { to: string; label: string; icon: ReactNode; highlight?: boolean }[] }[] = [
-  { group: 'Visão geral', items: [{ to: '/', label: 'Dashboard', icon: <LayoutDashboard size={18} /> }] },
-  {
-    group: 'Produção',
-    items: [
-      { to: '/ingredientes', label: 'Ingredientes', icon: <Wheat size={18} /> },
-      { to: '/materiais', label: 'Embalagens e adesivos', icon: <Package size={18} /> },
-      { to: '/compras', label: 'Compras', icon: <ShoppingCart size={18} /> },
-      { to: '/fichas', label: 'Fichas técnicas', icon: <ClipboardList size={18} /> },
-      { to: '/fichas?aba=bolos', label: 'Bolos de aniversário', icon: <Cake size={18} /> },
-      { to: '/producoes', label: 'Produções', icon: <Factory size={18} /> },
-      { to: '/estoque', label: 'Estoque', icon: <Boxes size={18} /> },
-    ],
-  },
-  {
-    group: 'Gestão',
-    items: [
-      { to: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={18} /> },
-      { to: '/clientes', label: 'Clientes', icon: <Users size={18} /> },
-      { to: '/financeiro', label: 'Financeiro', icon: <Wallet size={18} /> },
-      { to: '/loja-online', label: 'Loja online', icon: <Store size={18} /> },
-    ],
-  },
-  {
-    group: 'Ferramentas',
-    items: [
-      { to: '/assistente', label: 'Assistente de Precificação', icon: <Calculator size={18} />, highlight: true },
-      { to: '/custos', label: 'Custos operacionais', icon: <Flame size={18} /> },
-    ],
-  },
-  {
-    group: 'Sistema',
-    items: [
-      { to: '/historico', label: 'Histórico', icon: <ScrollText size={18} /> },
-      { to: '/configuracoes', label: 'Configurações', icon: <Settings size={18} /> },
-    ],
-  },
-];
+import { NAV } from './nav';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { db, updateSettings } = useStore();
+  const { db } = useStore();
   const loc = useLocation();
   // "/fichas" and "/fichas?aba=bolos" share a path: tell them apart by the query
   const activeFor = (to: string, isActive: boolean) => (to.startsWith('/fichas') ? isActive && (to.includes('aba=bolos') === loc.search.includes('aba=bolos')) : isActive);
   const lowStock =
     db.ingredients.filter((i) => i.minStock > 0 && i.stock <= i.minStock).length + db.materials.filter((m) => m.minStock > 0 && m.stock <= m.minStock).length;
-  const dark = db.settings.theme === 'dark';
   // confirmed orders due by the end of tomorrow (or late)
   const soon = new Date();
   soon.setDate(soon.getDate() + 1);
@@ -116,27 +78,70 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
-      <div className="space-y-2 border-t border-divider p-3">
+      <div className="border-t border-divider p-3">
         <a
           href="/loja"
           target="_blank"
           rel="noreferrer"
-          className="flex h-10 w-full items-center gap-3 rounded-lg bg-gradient-to-r from-pink to-lilac px-3 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+          className="flex h-10 w-full items-center gap-3 rounded-lg border border-line px-3 text-sm font-medium text-ink transition-colors hover:border-pink/30 hover:bg-pink-soft hover:text-pink"
         >
           <Store size={17} />
           <span className="flex-1 text-left">Ver loja dos clientes</span>
-          <span aria-hidden="true">↗</span>
+          <ArrowUpRight size={16} aria-hidden="true" />
         </a>
-        <button
-          type="button"
-          onClick={() => updateSettings({ theme: dark ? 'light' : 'dark' })}
-          className="flex h-10 w-full items-center gap-3 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle"
-        >
-          {dark ? <Sun size={17} /> : <Moon size={17} />}
-          <span className="flex-1 text-left">{dark ? 'Tema claro' : 'Tema escuro'}</span>
-        </button>
       </div>
     </div>
+  );
+}
+
+/** Search, the most common action and the theme switch — on every admin screen. */
+function TopBar({ onMenu }: { onMenu: () => void }) {
+  const { db, updateSettings } = useStore();
+  const openPalette = useCommandPalette();
+  const navigate = useNavigate();
+  const dark = db.settings.theme === 'dark';
+  const initials =
+    (db.settings.ownerName || db.settings.businessName || 'DG')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join('') || 'DG';
+  return (
+    <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-2 px-4 sm:px-6 lg:px-8">
+        <IconButton label="Abrir menu" className="lg:hidden" onClick={onMenu}>
+          <Menu size={20} />
+        </IconButton>
+        <span className="flex items-center gap-2 font-bold lg:hidden">
+          <Cake size={18} className="text-pink" /> DoceGestão
+        </span>
+        <button
+          type="button"
+          onClick={openPalette}
+          className="ml-auto flex h-9 items-center gap-2 rounded-lg border border-line bg-subtle px-3 text-sm text-muted transition-colors hover:border-pink/30 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40 lg:ml-0 lg:w-80"
+        >
+          <Search size={16} />
+          <span className="hidden flex-1 text-left sm:inline">Buscar pedido, cliente, ficha…</span>
+          <kbd className="hidden rounded border border-line bg-surface px-1.5 text-[11px] font-medium sm:inline">{isMac ? '⌘' : 'Ctrl'} K</kbd>
+        </button>
+        <div className="flex items-center gap-2 lg:ml-auto">
+          <Button size="sm" variant="primary" onClick={() => navigate('/pedidos?novo=1')} className="hidden sm:inline-flex">
+            <Plus size={15} /> Novo pedido
+          </Button>
+          <IconButton label={dark ? 'Usar tema claro' : 'Usar tema escuro'} onClick={() => updateSettings({ theme: dark ? 'light' : 'dark' })}>
+            {dark ? <Sun size={17} /> : <Moon size={17} />}
+          </IconButton>
+          <Link
+            to="/configuracoes"
+            title={db.settings.businessName || 'Configurações'}
+            className="grid h-8 w-8 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac ring-1 ring-lilac/20 transition-colors hover:bg-lilac hover:text-white"
+          >
+            {initials}
+          </Link>
+        </div>
+      </div>
+    </header>
   );
 }
 
@@ -167,6 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hasSample = db.recipes.some((r) => r.sample) || db.ingredients.some((i) => i.sample) || db.materials.some((m) => m.sample);
 
   return (
+    <CommandPaletteProvider>
     <div className="min-h-screen bg-bg">
       <StockWatcher />
       <Mascot />
@@ -174,15 +180,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line bg-surface lg:block">
         <SidebarContent />
       </aside>
-
-      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur lg:hidden">
-        <button className="rounded-lg p-2 text-ink hover:bg-subtle" onClick={() => setOpen(true)} aria-label="Abrir menu">
-          <Menu size={20} />
-        </button>
-        <span className="flex items-center gap-2 font-bold">
-          <Cake size={18} className="text-pink" /> DoceGestão
-        </span>
-      </header>
 
       <AnimatePresence>
         {open && (
@@ -205,6 +202,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </AnimatePresence>
 
       <main className="lg:pl-[264px]">
+        <TopBar onMenu={() => setOpen(true)} />
         {(hasSample || persistError) && (
           <div className="border-b border-line bg-surface px-4 py-2 text-center text-xs text-muted sm:px-8">
             {persistError ? (
@@ -219,5 +217,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
       </main>
     </div>
+    </CommandPaletteProvider>
   );
 }

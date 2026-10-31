@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { CircleDollarSign, Plus, Search, ShoppingBag, Trash, TriangleAlert, X } from 'lucide-react';
+import { Cake, CircleDollarSign, Columns3, List, Plus, Search, ShoppingBag, Trash, TriangleAlert, X } from 'lucide-react';
+import { OrderBoard } from '../components/OrderBoard';
 import { useStore } from '../store/store';
 import { date, dateTime, fromLocalDate, fromLocalDateTime, money, nowIso, pct, relativeDay, toLocalDate, toLocalDateTime, uid } from '../lib/format';
 import { METHOD_LABEL, STATUS, STATUS_FLOW, currentUnitCost, isOpen, orderTotals } from '../lib/orders';
@@ -16,6 +17,15 @@ import { orderVars } from '../lib/whatsapp';
 import { MessageCircle } from 'lucide-react';
 
 type Filter = 'abertos' | 'orcamento' | 'entregue' | 'cancelado' | 'todos';
+type View = 'lista' | 'quadro';
+const VIEW_KEY = 'docegestao:pedidos:visao';
+const readView = (): View => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'quadro' ? 'quadro' : 'lista';
+  } catch {
+    return 'lista';
+  }
+};
 
 const defaultDelivery = () => {
   const d = new Date();
@@ -50,6 +60,15 @@ export default function OrdersPage() {
   const [filter, setFilter] = useState<Filter>(() => (params.get('filtro') as Filter | null) ?? (customerFilter ? 'todos' : 'abertos'));
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<Order | null>(null);
+  const [view, setView] = useState<View>(readView);
+  const changeView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* the choice just isn't remembered */
+    }
+  };
 
   useEffect(() => {
     const id = params.get('pedido');
@@ -60,17 +79,21 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.get('pedido')]);
 
+  const searched = useMemo(
+    () =>
+      db.orders
+        .filter((o) => !customerFilter || o.customerId === customerFilter)
+        .filter((o) => `${o.number} ${o.customerName} ${o.items.map((i) => i.name).join(' ')}`.toLowerCase().includes(q.toLowerCase()))
+        .map((o) => ({ o, t: orderTotals(o, db.transactions, db.recipes, ctx) })),
+    [db, ctx, q, customerFilter],
+  );
   const rows = useMemo(() => {
-    const list = db.orders
-      .filter((o) => !customerFilter || o.customerId === customerFilter)
-      .filter((o) =>
-        filter === 'todos' ? true : filter === 'abertos' ? isOpen(o.status) && o.status !== 'orcamento' : o.status === filter,
-      )
-      .filter((o) => `${o.number} ${o.customerName} ${o.items.map((i) => i.name).join(' ')}`.toLowerCase().includes(q.toLowerCase()))
-      .map((o) => ({ o, t: orderTotals(o, db.transactions, db.recipes, ctx) }));
+    const list = searched.filter(({ o }) =>
+      filter === 'todos' ? true : filter === 'abertos' ? isOpen(o.status) && o.status !== 'orcamento' : o.status === filter,
+    );
     // open orders: soonest delivery first; closed: most recent first
     return filter === 'abertos' || filter === 'orcamento' ? list.sort((a, b) => a.o.deliveryAt.localeCompare(b.o.deliveryAt)) : list.sort((a, b) => b.o.deliveryAt.localeCompare(a.o.deliveryAt));
-  }, [db, ctx, filter, q, customerFilter]);
+  }, [searched, filter]);
 
   // "Novo pedido" from a customer profile: open a blank order already set to that customer
   useEffect(() => {
@@ -107,7 +130,7 @@ export default function OrdersPage() {
                 setEditing({ ...newOrder(), customerId: customerFilter, customerName: customerName ?? '' });
               }}
             >
-              🎂 Orçamento de bolo
+              <Cake size={16} /> Orçamento de bolo
             </Button>
             <Button variant="primary" onClick={() => setEditing({ ...newOrder(), customerId: customerFilter, customerName: customerName ?? '' })}>
               <Plus size={16} /> Novo pedido
@@ -118,18 +141,29 @@ export default function OrdersPage() {
       <motion.div variants={stagger.item}>
         <Card>
           <div className="flex flex-col gap-3 border-b border-divider p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="overflow-x-auto">
+            <div className="flex items-center gap-2 overflow-x-auto">
               <Segmented
-                value={filter}
-                onChange={setFilter}
+                value={view}
+                onChange={changeView}
                 options={[
-                  { value: 'abertos', label: 'Em andamento' },
-                  { value: 'orcamento', label: 'Orçamentos' },
-                  { value: 'entregue', label: 'Entregues' },
-                  { value: 'cancelado', label: 'Cancelados' },
-                  { value: 'todos', label: 'Todos' },
+                  { value: 'lista', label: <span className="inline-flex items-center gap-1.5"><List size={14} /> Lista</span> },
+                  { value: 'quadro', label: <span className="inline-flex items-center gap-1.5"><Columns3 size={14} /> Quadro</span> },
                 ]}
               />
+              {/* the board already splits orders by status, so the status filter only applies to the list */}
+              {view === 'lista' && (
+                <Segmented
+                  value={filter}
+                  onChange={setFilter}
+                  options={[
+                    { value: 'abertos', label: 'Em andamento' },
+                    { value: 'orcamento', label: 'Orçamentos' },
+                    { value: 'entregue', label: 'Entregues' },
+                    { value: 'cancelado', label: 'Cancelados' },
+                    { value: 'todos', label: 'Todos' },
+                  ]}
+                />
+              )}
             </div>
             <div className="flex items-center gap-2">
               {customerName && (
@@ -149,7 +183,9 @@ export default function OrdersPage() {
               </div>
             </div>
           </div>
-          {rows.length === 0 ? (
+          {view === 'quadro' && db.orders.length > 0 ? (
+            <OrderBoard rows={searched} onOpen={(o) => setEditing(JSON.parse(JSON.stringify(o)))} />
+          ) : rows.length === 0 ? (
             <EmptyState
               icon={<ShoppingBag size={22} />}
               title={db.orders.length ? 'Nenhum pedido neste filtro' : 'Nenhum pedido ainda'}

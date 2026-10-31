@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
-import { MotionConfig } from 'motion/react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { MotionConfig, motion } from 'motion/react';
 import { StoreProvider } from './store/store';
 import { ToastProvider } from './components/motion';
 import { AppShell } from './layout/AppShell';
@@ -24,8 +24,11 @@ function RecipeEditorRoute() {
 }
 
 function Admin() {
+  const loc = useLocation();
   return (
     <AppShell>
+      {/* screens swap many times a day: a quick fade marks the change without making anyone wait */}
+      <motion.div key={loc.pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: 'easeOut' }}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/assistente" element={<Assistant />} />
@@ -45,6 +48,7 @@ function Admin() {
         <Route path="/configuracoes" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </motion.div>
     </AppShell>
   );
 }
