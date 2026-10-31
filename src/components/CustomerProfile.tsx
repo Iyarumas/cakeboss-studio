@@ -118,7 +118,7 @@ export function CustomerProfile({ customer, onEdit, onWhatsApp }: { customer: Cu
                         ) : null
                       }
                     />
-                    <Bar dataKey="value" fill="#DB2777" radius={[4, 4, 0, 0]} maxBarSize={26} animationDuration={500} />
+                    <Bar dataKey="value" fill="rgb(var(--pink))" radius={[4, 4, 0, 0]} maxBarSize={26} animationDuration={500} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

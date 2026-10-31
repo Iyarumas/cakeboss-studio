@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# capturas geradas pelas skills de design
+.taste-skill/

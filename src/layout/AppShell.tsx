@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowUpRight, Cake, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
+import { ArrowUpRight, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
 import { useStore } from '../store/store';
 import { Button, IconButton, cx } from '../components/ui';
 import { useToast } from '../components/motion';
@@ -10,6 +10,9 @@ import { Onboarding } from '../components/Onboarding';
 import { CommandPaletteProvider, isMac, useCommandPalette } from '../components/CommandPalette';
 import { qtyBase } from '../lib/format';
 import { NAV } from './nav';
+import { AccountMenu, SaveIndicator } from './AccountMenu';
+import { AccentStyle } from '../components/AccentPicker';
+import { BrandMark } from '../components/BrandMark';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { db } = useStore();
@@ -26,11 +29,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-divider px-5 py-5">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-pink to-lilac text-white shadow-sm">
-          <Cake size={20} />
-        </span>
+        <BrandMark size={42} />
         <div className="min-w-0">
-          <div className="text-[17px] font-bold tracking-tight text-ink">DoceGestão</div>
+          <div className="font-display text-[19px] font-extrabold text-ink">CakeBoss</div>
           <div className="truncate text-xs text-muted">{db.settings.businessName || 'Confeitaria artesanal'}</div>
         </div>
       </div>
@@ -83,7 +84,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           href="/loja"
           target="_blank"
           rel="noreferrer"
-          className="flex h-10 w-full items-center gap-3 rounded-lg border border-line px-3 text-sm font-medium text-ink transition-colors hover:border-pink/30 hover:bg-pink-soft hover:text-pink"
+          className="flex h-10 w-full items-center gap-3 rounded-lg bg-gradient-to-r from-pink to-lilac px-3 text-sm font-semibold text-white shadow-sm transition-[opacity,transform] duration-150 ease-out hover:opacity-95 active:scale-[0.97]"
         >
           <Store size={17} />
           <span className="flex-1 text-left">Ver loja dos clientes</span>
@@ -114,7 +115,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <Menu size={20} />
         </IconButton>
         <span className="flex items-center gap-2 font-bold lg:hidden">
-          <Cake size={18} className="text-pink" /> DoceGestão
+          <BrandMark size={28} className="rounded-lg" /> <span className="font-display font-extrabold">CakeBoss</span>
         </span>
         <button
           type="button"
@@ -132,13 +133,8 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <IconButton label={dark ? 'Usar tema claro' : 'Usar tema escuro'} onClick={() => updateSettings({ theme: dark ? 'light' : 'dark' })}>
             {dark ? <Sun size={17} /> : <Moon size={17} />}
           </IconButton>
-          <Link
-            to="/configuracoes"
-            title={db.settings.businessName || 'Configurações'}
-            className="grid h-8 w-8 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac ring-1 ring-lilac/20 transition-colors hover:bg-lilac hover:text-white"
-          >
-            {initials}
-          </Link>
+          <SaveIndicator />
+          <AccountMenu initials={initials} ownerName={db.settings.ownerName} />
         </div>
       </div>
     </header>
@@ -175,6 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <CommandPaletteProvider>
     <div className="min-h-screen bg-bg">
       <StockWatcher />
+      <AccentStyle choice={db.settings.accentAdmin} />
       <Mascot />
       <Onboarding />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] border-r border-line bg-surface lg:block">

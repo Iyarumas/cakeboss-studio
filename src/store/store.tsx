@@ -33,7 +33,7 @@ export const defaultSettings = (): Settings => ({
   messageTemplates: defaultTemplates(),
 });
 
-const emptyDb = (): DB => ({
+export const emptyDb = (): DB => ({
   version: 1,
   customers: [],
   orders: [],
@@ -48,20 +48,31 @@ const emptyDb = (): DB => ({
   settings: defaultSettings(),
 });
 
-function load(): DB {
+/** Fills in fields added after the data was saved, so older data (local or cloud) opens in the current version. */
+export function normalizeDb(parsed: DB): DB {
+  const settings = { ...defaultSettings(), ...parsed.settings };
+  // older versions stored only a price per kg: turn it back into a P13 cylinder price
+  const legacy = (parsed.settings as { gasPricePerKg?: number }).gasPricePerKg;
+  if (legacy && !settings.gasCylinderPrice) settings.gasCylinderPrice = Math.round(legacy * settings.gasCylinderKg * 100) / 100;
+  delete (settings as { gasPricePerKg?: number }).gasPricePerKg;
+  return { ...emptyDb(), ...parsed, settings };
+}
+
+/** Data kept in this browser (demo store and the pre-cloud version of the system). */
+export function loadLocal(): DB {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return emptyDb();
-    const parsed = JSON.parse(raw) as DB;
-    const settings = { ...defaultSettings(), ...parsed.settings };
-    // older versions stored only a price per kg: turn it back into a P13 cylinder price
-    const legacy = (parsed.settings as { gasPricePerKg?: number }).gasPricePerKg;
-    if (legacy && !settings.gasCylinderPrice) settings.gasCylinderPrice = Math.round(legacy * settings.gasCylinderKg * 100) / 100;
-    delete (settings as { gasPricePerKg?: number }).gasPricePerKg;
-    return { ...emptyDb(), ...parsed, settings };
+    return normalizeDb(JSON.parse(raw) as DB);
   } catch {
     return emptyDb();
   }
+}
+
+/** True when this browser holds real work worth bringing into a new account. */
+export function hasLocalData(): boolean {
+  const d = loadLocal();
+  return [d.recipes, d.ingredients, d.orders, d.customers, d.transactions].some((xs) => xs.some((x) => !(x as { sample?: boolean }).sample));
 }
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -124,7 +135,7 @@ export function parseBackup(text: string): { ok: true; data: DB } | { ok: false;
   }
   const o = raw as Partial<DB> | null;
   if (!o || typeof o !== 'object' || o.version !== 1 || typeof o.settings !== 'object' || !Array.isArray(o.recipes) || !Array.isArray(o.ingredients))
-    return { ok: false, error: 'Este arquivo não parece ser um backup do DoceGestão.' };
+    return { ok: false, error: 'Este arquivo não parece ser um backup do CakeBoss.' };
   const data = { ...emptyDb(), ...o } as DB;
   for (const k of LIST_KEYS) if (!Array.isArray(data[k])) (data as unknown as Record<string, unknown[]>)[k] = [];
   return { ok: true, data };
@@ -169,14 +180,25 @@ function produceOrder(d: DB, order: Order, ctx: PricingContext): DB {
   return next;
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<DB>(load);
+/**
+ * Without `persist` the data lives in this browser (localStorage). With it, the caller saves each change
+ * (the cloud account) and `initial` is where the data starts.
+ */
+export function StoreProvider({ children, initial, persist }: { children: ReactNode; initial?: DB; persist?: (db: DB) => void }) {
+  const [db, setDb] = useState<DB>(() => (initial ? normalizeDb(initial) : loadLocal()));
   const [persistError, setPersistError] = useState(false);
   const first = useRef(true);
+  const persistRef = useRef(persist);
+  persistRef.current = persist;
+  const local = !persist;
 
   useEffect(() => {
     if (first.current) {
       first.current = false;
+      return;
+    }
+    if (persistRef.current) {
+      persistRef.current(db);
       return;
     }
     try {
@@ -189,12 +211,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // keep several open tabs in sync, otherwise the last tab to save would overwrite the others
   useEffect(() => {
+    if (!local) return;
     const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY && e.newValue) setDb(load());
+      if (e.key === KEY && e.newValue) setDb(loadLocal());
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [local]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = db.settings.theme;

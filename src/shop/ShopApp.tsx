@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Cake, LogOut, Minus, Plus, ShoppingBag, Trash, User, X } from 'lucide-react';
@@ -9,6 +9,7 @@ import { currentAccount, signOut, type Account } from '../lib/shopAuth';
 import type { Customer, Recipe } from '../lib/types';
 import { Button, cx } from '../components/ui';
 import { ToastProvider } from '../components/motion';
+import { AccentStyle } from '../components/AccentPicker';
 import { AuthDialog } from './AuthDialog';
 import ShopHome from './ShopHome';
 import Checkout from './Checkout';
@@ -85,7 +86,7 @@ export default function ShopApp() {
   useEffect(() => {
     document.title = `${db.settings.businessName || 'Confeitaria'} · Loja`;
     return () => {
-      document.title = 'DoceGestão';
+      document.title = 'CakeBoss';
     };
   }, [db.settings.businessName]);
 
@@ -125,11 +126,12 @@ export default function ShopApp() {
   return (
     <Ctx.Provider value={ctx}>
       <ToastProvider>
-        <div data-theme="light" className="min-h-screen overflow-x-clip bg-bg text-ink">
-          <div className="border-b border-warn/30 bg-warn-soft px-4 py-2 text-center text-xs text-ink">
+        <AccentStyle choice={db.settings.accentShop ?? db.settings.accentAdmin} />
+        <div data-theme="light" style={shopTheme(!db.settings.accentShop)} className="min-h-screen overflow-x-clip bg-bg text-ink">
+          <div className="bg-warn-soft px-4 py-2 text-center text-[13px] text-ink">
             <b>Modo demonstração:</b> cadastros e pedidos ficam salvos só neste navegador e ainda não chegam à confeitaria por outros aparelhos. Login com Google será ativado quando a loja estiver na nuvem.
           </div>
-          <header className="sticky top-0 z-30 border-b border-line/70 bg-surface/80 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 bg-surface">
             <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
               <Link to="/loja" className="flex items-center gap-2.5">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-pink to-lilac text-white shadow-sm">
@@ -191,7 +193,7 @@ export default function ShopApp() {
             </Routes>
           )}
 
-          <footer className="mt-24 border-t border-line bg-surface">
+          <footer className="mt-32 bg-surface">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:justify-between">
               <span>
                 © {new Date().getFullYear()} {db.settings.businessName || 'Confeitaria'} · Navegantes e região
@@ -355,6 +357,24 @@ export function QtyStepper({ value, onChange, min = 1 }: { value: number; onChan
       </button>
     </div>
   );
+}
+
+/**
+ * Chocolate-and-cream palette of the store (warm bakery tones that match the cake photos).
+ * The accent pair (raspberry + caramel) only applies while the bakery hasn't picked its own store color.
+ */
+function shopTheme(withAccent: boolean): CSSProperties {
+  const t: Record<string, string> = {
+    '--bg': '246 241 234',
+    '--surface': '252 250 246',
+    '--subtle': '238 231 222',
+    '--border': '226 217 205',
+    '--divider': '234 226 216',
+    '--text': '59 35 20',
+    '--muted': '124 90 68',
+  };
+  if (withAccent) Object.assign(t, { '--pink': '190 47 85', '--pink-soft': '251 228 233', '--lilac': '180 83 9', '--lilac-soft': '253 236 211' });
+  return t as CSSProperties;
 }
 
 export function Section({ id, children, className }: { id?: string; children: ReactNode; className?: string }) {

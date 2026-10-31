@@ -1,6 +1,6 @@
-import { lazy, Suspense, useRef, type PointerEvent } from 'react';
+import { useRef, type PointerEvent } from 'react';
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
-import { ArrowDown, Check, CreditCard, MapPin, MessageCircle, Plus, QrCode, ShoppingBag, Store, Truck } from 'lucide-react';
+import { Check, CreditCard, MapPin, MessageCircle, Plus, QrCode, ShoppingBag, Store, Truck } from 'lucide-react';
 import { useStore } from '../store/store';
 import { money } from '../lib/format';
 import { activeZones, hasOptions, startingPrice, storeSettings } from '../lib/shop';
@@ -10,9 +10,8 @@ import { cakeStartingPrice } from '../lib/cake';
 import { Button } from '../components/ui';
 import { useToast } from '../components/motion';
 import { Section, useShop } from './ShopApp';
-import { artFor, cleanName } from './art';
-
-const Hero3D = lazy(() => import('./Hero3D'));
+import { cleanName } from './art';
+import CakeStory, { AboutBakery, CakeTurntable } from './CakeStory';
 
 /** Birthday cake the customer builds: opens the cake builder. */
 function CakeCard({ cake, index }: { cake: CakeProduct; index: number }) {
@@ -28,21 +27,19 @@ function CakeCard({ cake, index }: { cake: CakeProduct; index: number }) {
       transition={{ type: 'spring', stiffness: 120, damping: 18, delay: (index % 3) * 0.08 }}
       style={{ perspective: 900 }}
     >
-      <div className="group relative overflow-hidden rounded-3xl border-2 border-pink/30 bg-surface shadow-card transition-shadow hover:shadow-pop">
+      <div className="group relative overflow-hidden rounded-3xl bg-surface">
         <button
           type="button"
           onClick={() => openCake(cake.id)}
           aria-label={`Montar ${cake.name}`}
-          className="relative grid h-52 w-full place-items-center overflow-hidden bg-gradient-to-br from-pink-200 via-rose-100 to-violet-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink/30"
+          className="relative grid h-52 w-full place-items-center overflow-hidden bg-subtle focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink/30"
         >
           {cake.image ? (
             <img src={cake.image} alt={cake.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           ) : (
-            <motion.span className="select-none text-[88px] drop-shadow-xl" animate={reduce ? undefined : { y: [0, -8, 0], rotate: [-2, 2, -2] }} transition={{ duration: 3.4, repeat: Infinity }}>
-              🎂
-            </motion.span>
+            <span className="px-6 text-center font-display text-3xl font-extrabold leading-tight tracking-[-0.02em]">{cake.name}</span>
           )}
-          <span className="absolute left-4 top-4 rounded-full bg-pink px-2.5 py-1 text-[11px] font-semibold text-white shadow">Monte do seu jeito</span>
+          <span className="absolute left-4 top-4 rounded-full bg-pink px-3 py-1 text-[13px] font-semibold text-white">Monte do seu jeito</span>
         </button>
         <div className="p-5">
           <button type="button" onClick={() => openCake(cake.id)} className="text-left text-lg font-semibold leading-tight hover:text-pink">
@@ -74,7 +71,6 @@ function ProductCard({ r, index }: { r: Recipe; index: number }) {
   const ry = useMotionValue(0);
   const sx = useSpring(rx, { stiffness: 220, damping: 18 });
   const sy = useSpring(ry, { stiffness: 220, damping: 18 });
-  const [emoji, grad] = artFor(r);
   // the photo slides slightly against the tilt, so it looks like it has depth
   const imgX = useTransform(sy, (v) => v * -0.8);
   const imgY = useTransform(sx, (v) => v * 0.8);
@@ -99,13 +95,13 @@ function ProductCard({ r, index }: { r: Recipe; index: number }) {
           ry.set(0);
         }}
         style={{ rotateX: sx, rotateY: sy, transformStyle: 'preserve-3d' }}
-        className="group relative overflow-hidden rounded-3xl border border-line bg-surface shadow-card transition-shadow hover:shadow-pop"
+        className="group relative overflow-hidden rounded-3xl bg-surface"
       >
         <button
           type="button"
           onClick={() => openProduct(r.id)}
           aria-label={`Ver ${cleanName(r.name)}`}
-          className={`relative grid h-52 w-full cursor-zoom-in place-items-center overflow-hidden bg-gradient-to-br focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink/30 ${grad}`}
+          className="relative grid h-52 w-full cursor-zoom-in place-items-center overflow-hidden bg-subtle focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink/30"
           style={{ transformStyle: 'preserve-3d' }}
         >
           {r.storeImage ? (
@@ -117,12 +113,12 @@ function ProductCard({ r, index }: { r: Recipe; index: number }) {
               style={{ scale: 1.08, x: imgX, y: imgY }}
             />
           ) : (
-            <motion.span className="select-none text-[88px] drop-shadow-xl" style={{ translateZ: 60 }} animate={reduce ? undefined : { y: [0, -8, 0] }} transition={{ duration: 3 + index * 0.3, repeat: Infinity }}>
-              {emoji}
-            </motion.span>
+            <span className="px-6 text-center font-display text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ transform: 'translateZ(40px)' }}>
+              {cleanName(r.name)}
+            </span>
           )}
-          {r.category && <span className="absolute left-4 top-4 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-ink backdrop-blur">{r.category}</span>}
-          <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-ink opacity-0 shadow transition-opacity group-hover:opacity-100">Ver produto</span>
+          {r.category && <span className="absolute left-4 top-4 rounded-full bg-surface px-3 py-1 text-[13px] font-semibold text-ink">{r.category}</span>}
+          <span className="absolute bottom-3 right-3 rounded-full bg-surface px-3 py-1 text-[13px] font-semibold text-ink opacity-0 transition-opacity group-hover:opacity-100">Ver produto</span>
         </button>
         <div className="p-5" style={{ transform: 'translateZ(30px)' }}>
           <button type="button" onClick={() => openProduct(r.id)} className="text-left text-lg font-semibold leading-tight hover:text-pink">
@@ -171,82 +167,66 @@ export default function ShopHome() {
 
   return (
     <>
-      {/* hero */}
-      <div ref={heroRef} className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-pink/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-40 top-20 h-[480px] w-[480px] rounded-full bg-lilac/25 blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-6 px-4 pb-10 pt-10 md:grid-cols-2 md:pt-16">
+      {/* hero: the cake turning on its stand, on the same charcoal as the clip's backdrop */}
+      <div ref={heroRef} className="relative overflow-hidden bg-[#535757] text-[#F6F1EA]">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-4 px-4 pb-16 pt-2 lg:min-h-[min(84svh,780px)] lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:py-8">
           <motion.div style={reduce ? undefined : { y: textY, opacity: textOpacity }}>
-            <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-full border border-pink/20 bg-pink-soft px-3 py-1 text-xs font-semibold text-pink">
-              <MapPin size={13} /> Navegantes e cidades vizinhas
-            </motion.span>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mt-5 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-              Doces feitos à mão,{' '}
-              <span className="bg-gradient-to-r from-pink to-lilac bg-clip-text text-transparent">do jeitinho que você imagina.</span>
+            <motion.h1
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+              className="font-display text-[2.35rem] font-extrabold leading-[0.98] tracking-[-0.03em] [text-wrap:balance] sm:text-6xl lg:text-[4.25rem]"
+            >
+              Doces feitos à mão em Navegantes
             </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mt-5 max-w-md text-lg text-muted">
-              {st.about || `Encomende na ${name}: escolha, pague com segurança e receba em casa ou retire com a gente.`}
+            <motion.p
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
+              className="mt-5 max-w-md text-lg sm:text-xl"
+            >
+              {st.about || `Bolos, brownies e doces da ${name}, sob encomenda. Receba em casa ou retire com a gente.`}
             </motion.p>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-8 flex flex-wrap gap-3">
-              <a href="#cardapio" className="inline-flex h-12 items-center gap-2 rounded-xl bg-pink px-6 text-base font-semibold text-white shadow-lg shadow-pink/25 hover:bg-pink/90">
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.16, ease: [0.23, 1, 0.32, 1] }}
+              className="mt-7 flex flex-wrap gap-3 sm:mt-9"
+            >
+              <a href="#cardapio" className="inline-flex min-h-[52px] items-center gap-2 rounded-full bg-[#F6F1EA] px-7 text-base font-semibold text-[#2a1810] transition-[transform,background-color] duration-150 ease-out hover:bg-white active:scale-[0.97]">
                 <ShoppingBag size={18} /> Ver cardápio
               </a>
               {wa && (
-                <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl border border-line bg-surface px-5 text-base font-semibold hover:bg-subtle">
-                  <MessageCircle size={18} className="text-profit" /> Falar no WhatsApp
+                <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="inline-flex min-h-[52px] items-center gap-2 rounded-full bg-white/10 px-6 text-base font-semibold transition-[transform,background-color] duration-150 ease-out hover:bg-white/20 active:scale-[0.97]">
+                  <MessageCircle size={18} /> Falar no WhatsApp
                 </a>
               )}
             </motion.div>
           </motion.div>
-          <div className="relative h-[380px] sm:h-[480px]">
-            <Suspense fallback={<div className="absolute inset-10 animate-pulse rounded-full bg-gradient-to-br from-pink-soft to-lilac-soft" />}>
-              <Hero3D still={!!reduce} />
-            </Suspense>
+          <div className="relative order-first h-[42svh] min-h-[300px] sm:h-[52svh] lg:order-none lg:h-[min(82svh,760px)]">
+            <CakeTurntable />
           </div>
-        </div>
-        <div className="flex justify-center pb-6 text-muted">
-          <motion.span animate={reduce ? undefined : { y: [0, 6, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>
-            <ArrowDown size={20} />
-          </motion.span>
         </div>
       </div>
 
-      {/* how it works */}
-      <Section className="mt-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            { icon: <ShoppingBag size={20} />, t: 'Escolha', d: 'Monte seu pedido pelo cardápio e escolha a data.' },
-            { icon: <CreditCard size={20} />, t: 'Pague com segurança', d: 'Pix ou cartão de crédito pelo Mercado Pago. Dinheiro só na retirada.' },
-            { icon: <Truck size={20} />, t: 'Receba ou retire', d: zones.length ? `Entregamos em ${zones.map((z) => z.city).join(', ')}.` : 'Retire com a gente no dia combinado.' },
-          ].map((s, i) => (
-            <motion.div
-              key={s.t}
-              initial={reduce ? false : { opacity: 0, y: 30, rotateY: -15 }}
-              whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, type: 'spring', stiffness: 120, damping: 16 }}
-              style={{ perspective: 800 }}
-              className="rounded-3xl border border-line bg-surface p-6 shadow-card"
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-pink to-lilac text-white">{s.icon}</span>
-              <div className="mt-4 text-xs font-semibold text-pink">Passo {i + 1}</div>
-              <h3 className="mt-1 text-lg font-semibold">{s.t}</h3>
-              <p className="mt-1 text-sm text-muted">{s.d}</p>
-            </motion.div>
-          ))}
-        </div>
-      </Section>
+      {/* scroll story with the bakery's photos */}
+      <CakeStory />
+
+      <AboutBakery
+        text="Chocolate derretido na hora e bolo montado só quando você encomenda."
+        body="Nada fica pronto na vitrine esperando. Cada doce é feito para o seu dia, com o capricho de quem faz cada um como se fosse o primeiro."
+      />
 
       {/* menu */}
-      <Section id="cardapio" className="mt-20">
+      <Section id="cardapio" className="scroll-mt-20">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Cardápio</h2>
-            <p className="mt-1 text-muted">Feito sob encomenda, com antecedência mínima de {st.leadDays} dia{st.leadDays === 1 ? '' : 's'}.</p>
+            <h2 className="font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">Cardápio</h2>
+            <p className="mt-2 text-lg">Feito sob encomenda, com antecedência mínima de {st.leadDays} dia{st.leadDays === 1 ? '' : 's'}.</p>
           </div>
         </div>
         {products.length === 0 && cakes.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-line bg-surface p-12 text-center text-muted">O cardápio está sendo preparado. Volte em breve! 🧁</div>
+          <div className="rounded-3xl bg-subtle p-12 text-center text-lg">O cardápio está sendo preparado. Volte em breve!</div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {cakes.map((k, i) => (
@@ -259,20 +239,43 @@ export default function ShopHome() {
         )}
       </Section>
 
+      {/* how it works: three steps set as a list in large type */}
+      <Section className="mt-32">
+        <h2 className="font-display text-4xl font-extrabold tracking-[-0.03em] sm:text-5xl">Como funciona</h2>
+        <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-8">
+          {[
+            { t: 'Escolha', d: 'Monte seu pedido pelo cardápio e escolha a data.' },
+            { t: 'Pague com segurança', d: 'Pix ou cartão de crédito pelo Mercado Pago. Dinheiro só na retirada.' },
+            { t: 'Receba ou retire', d: zones.length ? `Entregamos em ${zones.map((z) => z.city).join(', ')}.` : 'Retire com a gente no dia combinado.' },
+          ].map((s, i) => (
+            <motion.li
+              key={s.t}
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: i * 0.07, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <h3 className="font-display text-2xl font-bold sm:text-3xl">{s.t}</h3>
+              <p className="mt-2 max-w-xs text-lg">{s.d}</p>
+            </motion.li>
+          ))}
+        </ol>
+      </Section>
+
       {/* delivery + payment */}
       <Section id="entrega" className="mt-24">
         <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div initial={reduce ? false : { opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="rounded-3xl border border-line bg-surface p-7 shadow-card">
+          <motion.div initial={reduce ? false : { opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="rounded-3xl bg-surface p-7">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-pink-soft text-pink">
                 <Truck size={20} />
               </span>
-              <h2 className="text-2xl font-bold">Onde entregamos</h2>
+              <h2 className="font-display text-2xl font-bold">Onde entregamos</h2>
             </div>
             {zones.length === 0 ? (
               <p className="mt-4 text-muted">No momento trabalhamos só com retirada. {st.pickupAddress && `Endereço: ${st.pickupAddress}.`}</p>
             ) : (
-              <ul className="mt-5 divide-y divide-divider">
+              <ul className="mt-5 grid gap-1">
                 {zones.map((z) => (
                   <li key={z.id} className="flex items-center justify-between py-3">
                     <span className="flex items-center gap-2 font-medium">
@@ -292,15 +295,15 @@ export default function ShopHome() {
             </div>
           </motion.div>
 
-          <motion.div id="pagamento" initial={reduce ? false : { opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="scroll-mt-24 rounded-3xl border border-line bg-surface p-7 shadow-card">
+          <motion.div id="pagamento" initial={reduce ? false : { opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="scroll-mt-24 rounded-3xl bg-surface p-7">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-lilac-soft text-lilac">
                 <CreditCard size={20} />
               </span>
-              <h2 className="text-2xl font-bold">Como pagar</h2>
+              <h2 className="font-display text-2xl font-bold">Como pagar</h2>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-line p-4">
+              <div className="rounded-2xl bg-subtle p-4">
                 <div className="flex items-center gap-2 font-semibold">
                   <Truck size={16} className="text-pink" /> Entrega
                 </div>
@@ -314,7 +317,7 @@ export default function ShopHome() {
                 </ul>
                 <p className="mt-2 text-xs text-muted">Pagamento antes da produção, pelo Mercado Pago.</p>
               </div>
-              <div className="rounded-2xl border border-line p-4">
+              <div className="rounded-2xl bg-subtle p-4">
                 <div className="flex items-center gap-2 font-semibold">
                   <Store size={16} className="text-lilac" /> Retirada
                 </div>

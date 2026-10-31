@@ -19,7 +19,10 @@ export default {
         loss: { DEFAULT: c('red'), soft: c('red-soft') },
         warn: { DEFAULT: c('amber'), soft: c('amber-soft') },
       },
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      fontFamily: {
+        sans: ['"Figtree Variable"', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque Variable"', '"Figtree Variable"', 'system-ui', 'sans-serif'],
+      },
       boxShadow: {
         card: '0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.03)',
         pop: '0 12px 32px -8px rgb(16 24 40 / 0.18), 0 2px 6px rgb(16 24 40 / 0.06)',

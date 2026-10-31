@@ -45,7 +45,10 @@
 }
 
 html, body { background: rgb(var(--bg)); color: rgb(var(--text)); }
-body { font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { font-family: 'Figtree Variable', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+/* the CakeBoss voice: titles in Bricolage Grotesque, whose optical size sharpens its character as it grows */
+h1, h2, .font-display { font-family: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
+::selection { background: rgb(var(--pink) / 0.18); color: rgb(var(--text)); }
 .tabular { font-variant-numeric: tabular-nums; }
 
 /* Range slider: native input for touch/keyboard, styled track drawn by the component */

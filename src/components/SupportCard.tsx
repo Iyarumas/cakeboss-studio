@@ -13,7 +13,7 @@ export function SupportCard() {
   const [message, setMessage] = useState('');
   const hasChannel = !!(SUPPORT.whatsapp || SUPPORT.email);
 
-  const body = `${subject} — ${db.settings.businessName || 'DoceGestão'}\n\n${message.trim()}\n\n(DoceGestão v${APP_VERSION})`;
+  const body = `${subject} — ${db.settings.businessName || 'CakeBoss'}\n\n${message.trim()}\n\n(CakeBoss v${APP_VERSION})`;
   const open = (url: string) => window.open(url, '_blank', 'noopener,noreferrer');
 
   return (
@@ -47,7 +47,7 @@ export function SupportCard() {
             {SUPPORT.email && (
               <Button
                 disabled={!message.trim()}
-                onClick={() => open(`mailto:${SUPPORT.email}?subject=${encodeURIComponent(`[DoceGestão] ${subject}`)}&body=${encodeURIComponent(body)}`)}
+                onClick={() => open(`mailto:${SUPPORT.email}?subject=${encodeURIComponent(`[CakeBoss] ${subject}`)}&body=${encodeURIComponent(body)}`)}
               >
                 <Mail size={16} /> Enviar por e-mail
               </Button>

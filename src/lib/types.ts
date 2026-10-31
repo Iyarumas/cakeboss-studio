@@ -92,6 +92,10 @@ export interface Settings {
   mascotFirstRole?: 'pedidos' | 'financas';
   /** first-access welcome already shown */
   onboarded?: boolean;
+  /** brand color of the admin: a preset id from lib/theme or "#RRGGBB" (unset = rosa) */
+  accentAdmin?: string;
+  /** brand color of the customer store (unset = same as the admin) */
+  accentShop?: string;
   store?: StoreSettings;
 }
 

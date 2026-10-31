@@ -3,6 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from '
 import { MotionConfig, motion } from 'motion/react';
 import { StoreProvider } from './store/store';
 import { ToastProvider } from './components/motion';
+import { AuthProvider } from './auth/AuthProvider';
+import { ForgotPasswordPage, RequireAuth, ResetPasswordPage, SignInPage, SignUpPage } from './auth/AuthPages';
+import { AuthShell } from './auth/AuthShell';
+import { WorkspaceGate } from './cloud/WorkspaceGate';
 import { AppShell } from './layout/AppShell';
 import Dashboard from './pages/Dashboard';
 import Assistant from './pages/Assistant';
@@ -56,23 +60,41 @@ function Admin() {
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <StoreProvider>
-        <ToastProvider>
-          <BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <AuthProvider>
             <Routes>
               <Route
                 path="/loja/*"
                 element={
-                  <Suspense fallback={<div className="grid min-h-screen place-items-center text-muted">Carregando a loja…</div>}>
-                    <ShopApp />
-                  </Suspense>
+                  // the store still runs in demo mode, on this browser's data
+                  <StoreProvider>
+                    <Suspense fallback={<div className="grid min-h-screen place-items-center text-muted">Carregando a loja…</div>}>
+                      <ShopApp />
+                    </Suspense>
+                  </StoreProvider>
                 }
               />
-              <Route path="*" element={<Admin />} />
+              <Route element={<AuthShell />}>
+                <Route path="/entrar" element={<SignInPage />} />
+                <Route path="/criar-conta" element={<SignUpPage />} />
+                <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+                <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+              </Route>
+              <Route
+                path="*"
+                element={
+                  <RequireAuth>
+                    <WorkspaceGate>
+                      <Admin />
+                    </WorkspaceGate>
+                  </RequireAuth>
+                }
+              />
             </Routes>
-          </BrowserRouter>
-        </ToastProvider>
-      </StoreProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ToastProvider>
     </MotionConfig>
   );
 }

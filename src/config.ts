@@ -4,7 +4,7 @@
  * whatsapp: digits only with country and area code, e.g. '5551999999999'.
  */
 export const SUPPORT = {
-  name: 'Suporte DoceGestão',
+  name: 'Suporte CakeBoss',
   whatsapp: '',
   email: '',
   hours: 'Segunda a sexta, das 9h às 18h',

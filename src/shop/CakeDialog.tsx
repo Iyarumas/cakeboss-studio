@@ -155,7 +155,7 @@ export function CakeDialog({ cake, onClose }: { cake: CakeProduct | null; onClos
             <X size={18} />
           </button>
 
-          <div className="relative hidden bg-gradient-to-br from-pink-100 via-rose-50 to-violet-100 md:block">
+          <div className="relative hidden bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 md:block">
             {cake.image && <img src={cake.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
             <div className="relative h-full p-8">
               <CakeStack cake={cake} sel={sel} />
@@ -170,7 +170,7 @@ export function CakeDialog({ cake, onClose }: { cake: CakeProduct | null; onClos
                 {cake.description && <p className="mt-1 text-sm text-muted">{cake.description}</p>}
               </div>
 
-              <div className="h-44 rounded-2xl bg-gradient-to-br from-pink-100 via-rose-50 to-violet-100 md:hidden">
+              <div className="h-44 rounded-2xl bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 md:hidden">
                 <CakeStack cake={cake} sel={sel} />
               </div>
 

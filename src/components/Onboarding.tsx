@@ -46,7 +46,8 @@ function Confetti() {
  */
 export function Onboarding() {
   const { db, updateSettings } = useStore();
-  const [step, setStep] = useState<'nome' | 'festa' | 'fim'>('nome');
+  // names already given when the account set up its confeitaria: go straight to the celebration
+  const [step, setStep] = useState<'nome' | 'festa' | 'fim'>(() => (db.settings.ownerName.trim() ? 'festa' : 'nome'));
   const [name, setName] = useState(db.settings.ownerName);
   const [business, setBusiness] = useState(db.settings.businessName === 'Minha Confeitaria' ? '' : db.settings.businessName);
   const first = name.trim().split(/\s+/)[0] ?? '';
@@ -97,7 +98,7 @@ export function Onboarding() {
                     </motion.div>
                   ))}
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight">Boas-vindas ao DoceGestão!</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Boas-vindas ao CakeBoss!</h1>
                 <p className="mt-1 text-sm text-muted">Antes de começar, como podemos te chamar?</p>
                 <div className="mt-6 space-y-4 text-left">
                   <Field label="Seu nome">

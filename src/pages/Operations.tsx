@@ -13,6 +13,7 @@ import { ShoppingCart } from 'lucide-react';
 import { SupportCard } from '../components/SupportCard';
 import { MessagesCard } from '../components/MessagesCard';
 import { MascotPicker } from '../components/mascot/MascotPicker';
+import { AccentPicker, AccentPreview } from '../components/AccentPicker';
 
 /** Reference average for a domestic oven on a P13 cylinder; always editable. */
 const OVEN_GLP_KG_H = 0.225;
@@ -514,7 +515,19 @@ export function SettingsPage() {
           <motion.div variants={stagger.item}>
             <Card>
               <CardHeader title="Aparência" />
-              <div className="flex items-center justify-between gap-4 p-5">
+              <div className="space-y-5 p-5">
+                <AccentPicker label="Cor do sistema" value={db.settings.accentAdmin} onChange={(v) => updateSettings({ accentAdmin: v }, 'Cor do sistema alterada')} />
+                <div className="space-y-3">
+                  <AccentPicker
+                    label="Cor da loja dos clientes"
+                    value={db.settings.accentShop}
+                    inherit={{ label: 'Igual', color: db.settings.accentAdmin }}
+                    onChange={(v) => updateSettings({ accentShop: v }, 'Cor da loja alterada')}
+                  />
+                  <AccentPreview choice={db.settings.accentShop ?? db.settings.accentAdmin} title="Prévia da loja" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-4 border-t border-divider p-5">
                 <div>
                   <div className="text-sm font-medium">Tema</div>
                   <div className="text-xs text-muted">O sistema abre no tema claro por padrão.</div>
