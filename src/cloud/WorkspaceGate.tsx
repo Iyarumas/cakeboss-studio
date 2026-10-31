@@ -8,6 +8,7 @@ import { StoreProvider, defaultSettings, emptyDb, hasLocalData, loadLocal } from
 import { Button, Field, TextInput } from '../components/ui';
 import { useToast } from '../components/motion';
 import { BrandMark } from '../components/BrandMark';
+import { BRAND_DRAFT_KEY } from '../landing/draft';
 
 export type SaveState = 'salvo' | 'pendente' | 'salvando' | 'erro';
 
@@ -216,7 +217,13 @@ function CreateWorkspace({ onCreated }: { onCreated: () => void }) {
   const meta = (user?.user_metadata ?? {}) as { full_name?: string };
   // first name from sign-up as a starting point; she can write it the way she likes to be called
   const [owner, setOwner] = useState((meta.full_name ?? '').trim().split(/\s+/)[0] ?? '');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => {
+    try {
+      return sessionStorage.getItem(BRAND_DRAFT_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
   const canImport = useMemo(hasLocalData, []);
   const [importLocal, setImportLocal] = useState(canImport);
   const [error, setError] = useState('');

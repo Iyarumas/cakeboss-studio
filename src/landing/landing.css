@@ -1,0 +1,266 @@
+/*
+ * CakeBoss landing — "Linha de confeitar" (Impeccable, seed:1107ef44dc74a726) composed as Taste's
+ * "One motif" (seed 301022427). The motif is the piped pearl border a confeiteira draws around a cake:
+ * it is the top edge of every stage, the mask of the photographs, the shape of the buttons (a pearl),
+ * the bullets, the bars of the footer mark, and one piped line down the page.
+ */
+.lp {
+  --lp-ground: #ffffff;
+  --lp-tone: #f3f1ef; /* a low-chroma stone, one step off white */
+  --lp-ink: #1f1814;
+  --lp-muted: #4f4540;
+  --lp-accent: #db2777;
+  --lp-accent-ink: #be185d;
+  --lp-accent-soft: #fce7f1;
+  --lp-cacau: #8a5a3c;
+  --lp-cacau-soft: #eee8e3;
+  --lp-choc: #2a1a12;
+  --lp-cream: #f7f0ea;
+  --lp-margin: clamp(16px, 4vw, 56px);
+  --lp-pearl: 11px; /* radius of one piped pearl */
+  --fs-display: clamp(48px, 6.2vw, 96px);
+  --fs-heading: clamp(34px, 4.2vw, 64px);
+  --fs-statement: clamp(24px, 2.5vw, 34px);
+  --fs-body: 18px;
+  --fs-small: 15px;
+  background: var(--lp-ground);
+  color: var(--lp-ink);
+  font-family: 'Figtree Variable', system-ui, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  overflow-x: clip;
+}
+:where(.lp) :is(h1, h2, h3) { margin: 0; }
+.lp :is(h1, h2, h3, .lp-display) { font-family: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif; font-optical-sizing: auto; font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; text-wrap: balance; }
+:where(.lp) p { margin: 0; }
+.lp a:not(.lp-btn) { color: inherit; }
+html:has(.lp), body:has(.lp) { background: #ffffff; }
+.lp ::selection { background: rgb(219 39 119 / 0.2); }
+.lp :focus-visible { outline: 3px solid var(--lp-accent); outline-offset: 3px; }
+.lp-wrap { padding-inline: var(--lp-margin); max-width: 1440px; margin-inline: auto; }
+.lp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* the motif: a row of pearls on the top edge of a field (mask geometry, not a colour gradient) */
+.pearl-top { /* taste-skill-ignore: the gradients below draw the pearl shape as a mask */
+  -webkit-mask: radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) top / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    linear-gradient(#000 0 0) 0 var(--lp-pearl) / 100% 100% no-repeat; /* taste-skill-ignore */
+  mask: radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) top / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    linear-gradient(#000 0 0) 0 var(--lp-pearl) / 100% 100% no-repeat; /* taste-skill-ignore */
+}
+.pearl-both { /* taste-skill-ignore: mask geometry */
+  -webkit-mask: radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) top / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) bottom / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    linear-gradient(#000 0 0) 0 50% / 100% calc(100% - var(--lp-pearl) * 2) no-repeat; /* taste-skill-ignore */
+  mask: radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) top / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    radial-gradient(circle at 50% var(--lp-pearl), #000 calc(var(--lp-pearl) - 0.5px), #0000 var(--lp-pearl)) bottom / calc(var(--lp-pearl) * 2) calc(var(--lp-pearl) * 2) repeat-x, /* taste-skill-ignore */
+    linear-gradient(#000 0 0) 0 50% / 100% calc(100% - var(--lp-pearl) * 2) no-repeat; /* taste-skill-ignore */
+}
+
+/* buttons are pearls: fully round, one fill */
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 52px; padding: 0 26px; border-radius: 999px; border: 0; font: 600 var(--fs-body)/1 'Figtree Variable', system-ui, sans-serif; text-decoration: none; cursor: pointer;
+  background: var(--lp-accent); color: #fff; transition: transform 120ms var(--ease-out), background-color 160ms ease; }
+.lp-btn:active { transform: scale(0.97); }
+.lp-btn--ink { background: var(--lp-ink); color: var(--lp-cream); }
+.lp-btn--light { background: #fff; color: var(--lp-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .lp-btn:hover { background: #be185d; }
+  .lp-btn--ink:hover { background: #3a2619; }
+  .lp-btn--light:hover { background: var(--lp-cream); }
+}
+.lp-link { text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 0.22em; text-decoration-thickness: 0.07em; transition: text-decoration-color 160ms ease; }
+@media (hover: hover) and (pointer: fine) { .lp-link:hover { text-decoration-color: currentColor; } }
+
+/* navigation: a plain row */
+.lp-nav { display: flex; align-items: center; gap: 28px; height: 84px; font-size: var(--fs-small); }
+.lp-nav__mark { display: flex; align-items: center; gap: 10px; margin-right: auto; font: 700 var(--fs-body)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.02em; text-decoration: none; }
+.lp-nav__mark img { width: 40px; height: 40px; }
+.lp-nav__links { display: flex; gap: 28px; }
+.lp-nav .lp-btn { height: 44px; padding: 0 20px; font-size: 15px; }
+@media (max-width: 860px) { .lp-nav__links { display: none; } .lp-nav { gap: 16px; } }
+
+/* hero: headline on the ground, the calculator on a pink stage whose top edge is the piped border */
+.lp-hero { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; padding-top: clamp(32px, 7vh, 96px); }
+.lp-hero__text { grid-column: 1 / span 6; grid-row: 1; align-self: start; position: relative; z-index: 1; }
+.lp-hero h1 { font-size: var(--fs-display); max-width: 9.5ch; }
+.lp-hero__lead { margin-top: 32px; max-width: 40ch; font-size: var(--fs-body); color: var(--lp-ink); }
+.lp-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 32px; }
+/* the stage starts a third of the way down beside the headline and bleeds off the right edge */
+.lp-hero__stage { grid-column: 7 / -1; grid-row: 1; margin-right: calc(var(--lp-margin) * -1); margin-top: clamp(40px, 9vh, 110px); background: var(--lp-accent); padding: calc(var(--lp-pearl) + 40px) 0 0 48px; }
+@media (min-width: 1500px) { .lp-hero__stage { margin-right: calc((100vw - 1440px) / -2 - var(--lp-margin)); } }
+.lp-hero__stage-note { color: #fff; font-size: var(--fs-small); max-width: 46ch; margin: 0 48px 18px 0; }
+@media (max-width: 960px) {
+  .lp-hero { display: block; }
+  .lp-hero h1 { font-size: clamp(44px, 11vw, 72px); }
+  .lp-hero__stage { margin: 40px calc(var(--lp-margin) * -1) 0; padding: calc(var(--lp-pearl) + 24px) var(--lp-margin) 0; }
+}
+
+/* the calculator: a real piece of the product (data-ui) */
+.calc { background: #fff; color: var(--lp-ink); border-radius: 14px 0 0 0; padding: 28px 28px 8px; max-width: 640px; }
+@media (max-width: 960px) { .calc { max-width: none; } }
+.calc__head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.calc__title { font-size: var(--fs-small); color: var(--lp-muted); }
+.calc__price { font: 600 clamp(44px, 4.6vw, 64px)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.03em; color: var(--lp-accent-ink); font-variant-numeric: tabular-nums; }
+.calc__min { font-size: 15px; color: var(--lp-muted); margin-top: 6px; }
+.calc__split { display: flex; height: 14px; border-radius: 999px; overflow: hidden; margin: 20px 0 6px; gap: 3px; }
+.calc__split span { transition: flex-grow 320ms var(--ease-out); min-width: 3px; }
+.calc__legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--fs-small); color: var(--lp-muted); }
+.calc__legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.calc__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin-top: 22px; padding-bottom: 20px; }
+.calc__field { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-small); color: var(--lp-muted); }
+.calc__field span b { color: var(--lp-ink); font-weight: 600; }
+.calc__input { display: flex; align-items: center; height: 46px; border-radius: 10px; background: var(--lp-tone); padding: 0 12px; gap: 6px; color: var(--lp-ink); font-size: var(--fs-body); }
+.calc__input:focus-within { outline: 2px solid var(--lp-accent); }
+.calc__input input { border: 0; background: transparent; font: inherit; color: inherit; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; outline: none; }
+.calc__input em { font-style: normal; color: var(--lp-muted); font-size: var(--fs-small); }
+.calc__check { /* taste-skill-ignore: a real calculator's total rule (data-ui) */ border-top: 1px solid #efe8e1; margin-top: 4px; padding: 14px 0; font-size: var(--fs-small); color: var(--lp-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .calc { padding: 20px 16px 4px; border-radius: 12px 12px 0 0; } .calc__grid { grid-template-columns: 1fr; } }
+
+/* showcase: square plate, spare text */
+.lp-show { display: grid; grid-template-columns: 1fr 1fr; min-height: 88svh; background: var(--lp-tone); }
+.lp-show__plate { display: grid; place-items: center; padding: 56px 40px; }
+.lp-show__photo { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--lp-cacau-soft); }
+.lp-show__photo :is(img, video) { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-show__text { display: flex; flex-direction: column; justify-content: space-between; gap: 40px; padding: 72px var(--lp-margin) 56px 32px; }
+.lp-tabs { display: flex; flex-wrap: wrap; gap: 8px 28px; padding-left: 16px; }
+.lp-tabs button { border: 0; background: none; padding: 6px 0; font: 500 var(--fs-body)/1.2 'Figtree Variable', system-ui, sans-serif; color: var(--lp-muted); cursor: pointer; position: relative; }
+.lp-tabs button[aria-selected='true'] { color: var(--lp-ink); }
+.lp-tabs button[aria-selected='true']::before { content: ''; position: absolute; left: -16px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--lp-accent); }
+.lp-show h2 { font-size: var(--fs-heading); max-width: 12ch; }
+.lp-show__desc { margin-top: 32px; max-width: 34ch; }
+.lp-sheet { display: grid; grid-template-columns: auto auto; justify-content: start; gap: 4px 28px; margin-top: 28px; font-size: var(--fs-small); color: var(--lp-muted); font-variant-numeric: tabular-nums; }
+.lp-sheet b { color: var(--lp-ink); font-weight: 600; }
+.lp-cells { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lp-cells a { display: flex; align-items: center; justify-content: center; height: 72px; border-radius: 999px; font-weight: 600; text-decoration: none; transition: transform 120ms var(--ease-out), background-color 160ms ease; }
+.lp-cells a:active { transform: scale(0.97); }
+.lp-cells a:first-child { background: var(--lp-ink); color: var(--lp-cream); }
+.lp-cells a:last-child { background: #e9e0d6; color: var(--lp-ink); }
+@media (max-width: 860px) {
+  .lp-show { grid-template-columns: 1fr; min-height: 0; }
+  .lp-show__plate { padding: 32px var(--lp-margin) 0; }
+  .lp-show__text { padding: 32px var(--lp-margin) 40px; }
+  .lp-cells { grid-template-columns: 1fr; } .lp-cells a { height: 60px; }
+}
+
+/* one statement with picture words */
+.lp-feat { padding-block: clamp(96px, 14vh, 160px) clamp(72px, 10vh, 120px); }
+.lp-feat__statement { font-size: var(--fs-statement); line-height: 1.32; font-weight: 500; max-width: 34em; }
+.lp-slot { display: inline-block; height: 1.05em; width: 1.9em; border-radius: 999px; overflow: hidden; vertical-align: -0.16em; margin: 0 0.12em; background: var(--lp-cacau-soft); }
+.lp-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-slot--chip { width: auto; padding: 0 0.5em; background: var(--lp-accent-soft); color: var(--lp-accent-ink); font-size: 0.7em; height: 1.5em; line-height: 1.5em; vertical-align: 0.06em; font-weight: 600; }
+.lp-feat__after { margin-top: 64px; margin-left: 50%; max-width: 46ch; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+@media (max-width: 860px) { .lp-feat__after { margin-left: 0; } }
+
+/* how it works: the stages as one bar */
+.lp-how { padding-bottom: clamp(72px, 9vh, 140px); }
+.lp-how h2 { font-size: var(--fs-heading); max-width: 14ch; margin-bottom: 64px; }
+.lp-bar { display: flex; gap: 6px; height: 24vh; min-height: 180px; }
+.lp-bar__seg { position: relative; padding: 20px; border-radius: 0; display: flex; align-items: flex-start; }
+.lp-bar__seg b { font: 600 clamp(20px, 2vw, 30px)/1.05 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.02em; }
+.lp-bar__notes { display: flex; gap: 6px; margin-top: 18px; }
+.lp-bar__notes p { font-size: var(--fs-small); max-width: 24ch; padding-right: 12px; }
+@media (max-width: 860px) {
+  .lp-bar, .lp-bar__notes { display: none; }
+  .lp-steps { display: grid; gap: 6px; }
+}
+@media (min-width: 861px) { .lp-steps { display: none; } }
+.lp-steps__seg { padding: 20px 16px; min-height: 72px; }
+.lp-steps__seg b { display: block; font: 600 22px/1.1 'Bricolage Grotesque Variable', system-ui, sans-serif; }
+.lp-steps__seg p { margin-top: 6px; font-size: var(--fs-small); }
+
+/* a band of pearls separates the two halves of the page */
+.lp-band { height: 72px; background: var(--lp-accent); }
+
+/* plans that step up, like the bars inside the logo's cake */
+.lp-plans { padding-block: clamp(64px, 9vh, 140px) clamp(80px, 12vh, 160px); }
+.lp-plans__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end; margin-bottom: 56px; }
+.lp-plans__head h2 { grid-column: 1 / span 7; font-size: var(--fs-heading); }
+.lp-plans__head p { grid-column: 8 / span 5; color: var(--lp-ink); }
+.lp-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
+.lp-tile { display: flex; flex-direction: column; padding: calc(var(--lp-pearl) + 28px) 28px 28px; }
+.lp-tile:nth-child(1) { min-height: 380px; background: var(--lp-accent-soft); color: var(--lp-ink); }
+.lp-tile:nth-child(2) { min-height: 500px; background: var(--lp-accent); color: #fff; }
+.lp-tile:nth-child(3) { min-height: 620px; background: var(--lp-choc); color: var(--lp-cream); }
+.lp-tile h3 { font-size: clamp(30px, 2.8vw, 44px); }
+.lp-tile__for { margin-top: 12px; font-size: var(--fs-body); max-width: 26ch; }
+.lp-tile__inc { margin-top: auto; padding-top: 28px; font-size: var(--fs-small); max-width: 34ch; }
+.lp-tile__price { display: flex; align-items: baseline; gap: 6px; margin-top: 20px; font: 600 clamp(36px, 3.4vw, 52px)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.lp-tile__price small { font: 500 var(--fs-small)/1 'Figtree Variable', system-ui, sans-serif; letter-spacing: 0; }
+.lp-tile .lp-btn { margin-top: 20px; align-self: flex-start; }
+.lp-plans__note { margin-top: 28px; max-width: 70ch; color: var(--lp-ink); }
+@media (max-width: 900px) {
+  .lp-plans__head { display: block; } .lp-plans__head p { margin-top: 16px; }
+  .lp-tiles { grid-template-columns: 1fr; }
+  .lp-tile:nth-child(n) { min-height: 0; }
+}
+
+/* questions as filled tiles */
+.lp-faq { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; padding-bottom: clamp(96px, 14vh, 180px); }
+.lp-faq h2 { grid-column: 1 / span 4; font-size: var(--fs-heading); position: sticky; top: 96px; align-self: start; }
+.lp-faq__list { grid-column: 5 / span 8; display: grid; gap: 8px; }
+.lp-faq details { background: var(--lp-tone); border-radius: 16px; transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out); }
+.lp-faq summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 72px; padding: 0 24px; font-size: var(--fs-body); font-weight: 600; cursor: pointer; }
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-plus { position: relative; flex: none; width: 16px; height: 16px; }
+.lp-plus::before, .lp-plus::after { content: ''; position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; border-radius: 2px; background: currentColor; transition: transform 220ms var(--ease-out); }
+.lp-plus::after { transform: rotate(90deg); }
+.lp-faq details[open] { background: var(--lp-accent); color: #fff; }
+.lp-faq details[open] .lp-plus::after { transform: rotate(0deg); }
+.lp-faq__answer { padding: 0 24px 24px; font-size: var(--fs-body); max-width: 52ch; }
+@media (max-width: 860px) {
+  .lp-faq { display: block; } .lp-faq h2 { position: static; margin-bottom: 24px; }
+  .lp-faq summary { font-size: 18px; min-height: 64px; padding: 12px 20px; }
+  .lp-faq__answer { font-size: 16px; padding: 0 20px 20px; }
+}
+
+/* the closing sentence with a blank */
+.lp-cta { padding-bottom: clamp(72px, 10vh, 112px); }
+.lp-cta__sentence { font: 600 var(--fs-heading)/1.12 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.03em; max-width: 18em; }
+.lp-cta__sentence input { font: inherit; letter-spacing: inherit; height: 1.12em; width: 8.5em; max-width: 100%; border: 0; border-radius: 999px; background: var(--lp-tone); color: var(--lp-ink); padding: 0 0.4em; vertical-align: bottom; }
+.lp-cta__sentence input::placeholder { color: #8c7f76; }
+.lp-cta__sentence input:focus { outline: 3px solid var(--lp-accent); }
+.lp-cta__sentence button { font: inherit; letter-spacing: inherit; height: 1.12em; border: 0; border-radius: 999px; background: var(--lp-accent); color: #fff; padding: 0 0.45em; cursor: pointer; vertical-align: bottom; transition: transform 120ms var(--ease-out), background-color 160ms ease; }
+.lp-cta__sentence button:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .lp-cta__sentence button:hover { background: #be185d; } }
+.lp-cta__after { margin-top: 20px; font-size: var(--fs-small); color: var(--lp-muted); }
+
+/* footer: the mark built from bars, as the chart inside the logo's cake */
+.lp-foot { background: var(--lp-choc); color: var(--lp-cream); padding: calc(var(--lp-pearl) + 40px) 0 32px; }
+.lp-word { display: flex; align-items: flex-end; gap: 4px; height: 26svh; min-height: 180px; margin: 0; }
+.lp-word span { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 0.08em; font: 700 clamp(40px, 8vw, 128px)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; color: var(--lp-cream); }
+.lp-foot__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; margin-top: 56px; font-size: var(--fs-small); }
+.lp-foot__col { grid-column: span 3; display: flex; flex-direction: column; gap: 10px; }
+.lp-foot__col b { color: #fff; font-weight: 600; }
+.lp-foot__last { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 56px; font-size: var(--fs-small); color: #d8c8bb; }
+.lp-foot__credit { margin-top: 24px; font-size: var(--fs-small); color: #bfae9f; }
+@media (max-width: 860px) {
+  .lp-word { height: 22svh; min-height: 140px; } .lp-word span { font-size: 10vw; }
+  .lp-foot__col { grid-column: span 6; margin-bottom: 24px; }
+}
+
+/* the piped line down the page */
+.lp-pipe { position: absolute; left: calc(var(--lp-margin) / 2 - 6px); top: 0; width: 12px; height: 100%; pointer-events: none; z-index: 0; }
+@media (max-width: 1100px) { .lp-pipe { display: none; } }
+
+/* entrances: content is visible by default; script adds .is-in once */
+@media (prefers-reduced-motion: no-preference) {
+  .js-lp [data-rise] { opacity: 0; transform: translateY(22px); transition: opacity 600ms var(--ease-out), transform 700ms var(--ease-out); transition-delay: calc(var(--i, 0) * 80ms); }
+  .js-lp [data-rise].is-in { opacity: 1; transform: none; }
+  .js-lp .shutter { clip-path: inset(0 0 100% 0); transition: clip-path 1100ms var(--ease-in-out); }
+  .js-lp .shutter :is(img, video) { transform: scale(1.12); transition: transform 1500ms var(--ease-out); }
+  .js-lp .shutter.is-in { clip-path: inset(0); }
+  .js-lp .shutter.is-in :is(img, video) { transform: none; }
+  .lp-hero__stage { animation: lp-stage 900ms var(--ease-out) both 120ms; }
+}
+@keyframes lp-stage { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* small facts under the hero action, with pearls as bullets */
+.lp-facts { list-style: none; margin: 48px 0 0; padding: 0; display: grid; gap: 12px; font-size: var(--fs-body); }
+.lp-facts li { display: flex; align-items: center; gap: 12px; }
+.lp-facts li::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--lp-accent); flex: none; }
+
+/* a strip of real pictures, each cut with the piped edge */
+.lp-strip { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.2fr; gap: 8px; margin-top: 72px; }
+.lp-strip figure { margin: 0; aspect-ratio: 4 / 5; overflow: hidden; background: var(--lp-cacau-soft); }
+.lp-strip :is(img, video) { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-nowrap { white-space: nowrap; }
+@media (max-width: 760px) { .lp-strip { grid-template-columns: 1fr 1fr; } }

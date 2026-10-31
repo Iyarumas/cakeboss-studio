@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from '
 import { MotionConfig, motion } from 'motion/react';
 import { StoreProvider } from './store/store';
 import { ToastProvider } from './components/motion';
-import { AuthProvider } from './auth/AuthProvider';
+import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { ForgotPasswordPage, RequireAuth, ResetPasswordPage, SignInPage, SignUpPage } from './auth/AuthPages';
 import { AuthShell } from './auth/AuthShell';
 import { WorkspaceGate } from './cloud/WorkspaceGate';
@@ -21,6 +21,30 @@ import { HistoryPage, OperatingCostsPage, ProductionsPage, SettingsPage, StockPa
 
 // the public store (with the 3D scene) is loaded only when someone opens /loja
 const ShopApp = lazy(() => import('./shop/ShopApp'));
+// the public landing is loaded only for visitors who are not signed in
+const Landing = lazy(() => import('./landing/Landing'));
+
+function LandingRoute() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <Landing />
+    </Suspense>
+  );
+}
+
+/** The main address: signed-in people go straight to the panel; everyone else sees the landing. */
+function Home() {
+  const { session, loading } = useAuth();
+  const loc = useLocation();
+  if (loc.pathname === '/' && !loading && !session) return <LandingRoute />;
+  return (
+    <RequireAuth>
+      <WorkspaceGate>
+        <Admin />
+      </WorkspaceGate>
+    </RequireAuth>
+  );
+}
 
 function RecipeEditorRoute() {
   const { id } = useParams();
@@ -81,16 +105,9 @@ export default function App() {
                 <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
                 <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
               </Route>
-              <Route
-                path="*"
-                element={
-                  <RequireAuth>
-                    <WorkspaceGate>
-                      <Admin />
-                    </WorkspaceGate>
-                  </RequireAuth>
-                }
-              />
+              {/* the landing, always, even when signed in */}
+              <Route path="/conheca" element={<LandingRoute />} />
+              <Route path="*" element={<Home />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
