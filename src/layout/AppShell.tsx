@@ -84,7 +84,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           href="/loja"
           target="_blank"
           rel="noreferrer"
-          className="flex h-10 w-full items-center gap-3 rounded-lg bg-gradient-to-r from-pink to-lilac px-3 text-sm font-semibold text-white shadow-sm transition-[opacity,transform] duration-150 ease-out hover:opacity-95 active:scale-[0.97]"
+          className="flex h-10 w-full items-center gap-3 rounded-lg bg-gradient-to-r from-pink to-pink-deep px-3 text-sm font-semibold text-white shadow-sm transition-[opacity,transform] duration-150 ease-out hover:opacity-95 active:scale-[0.97]"
         >
           <Store size={17} />
           <span className="flex-1 text-left">Ver loja dos clientes</span>

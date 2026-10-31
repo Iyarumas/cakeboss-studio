@@ -187,3 +187,16 @@ docker rm -f cakeboss-pgtest
 3. **Stripe no Brasil** — confirmar antes da Fase 9.
 4. **Credenciais de teste** do Mercado Pago (aplicativo de desenvolvedor) para a Fase 9.
 5. **Plano de hospedagem** (Vercel/Supabase pagos) antes de abrir para clientes reais.
+
+## 12. Organização do código (frontend × backend)
+
+Pedido em 01/11: backend e frontend separados. A partir do início da Fase 7 o repositório fica assim:
+
+```
+apps/web/          frontend: landing, painel e loja (Vite + React). Só a chave publicável; nenhum segredo.
+supabase/          backend: migrations/, functions/ (Edge Functions: checkout, pagamentos, webhooks, assinaturas), tests/
+packages/domain/   regras puras compartilhadas: preço, custo, bolo montado, frete, agenda (usadas pelo web e pelo servidor)
+docs/              auditoria, arquitetura, guias de configuração
+```
+
+O servidor nunca importa código de tela, e o frontend nunca contém credenciais. As regras de preço ficam num pacote só para que o checkout no servidor calcule exatamente o mesmo valor mostrado na tela.

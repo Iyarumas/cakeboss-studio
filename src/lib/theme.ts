@@ -40,7 +40,7 @@ export const rgbToHex = ([r, g, b]: RGB) => `#${[r, g, b].map((v) => Math.round(
 const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 const WHITE: RGB = [255, 255, 255];
 const BLACK: RGB = [0, 0, 0];
-const DARK_SURFACE: RGB = [23, 20, 32]; // --surface in dark mode
+const DARK_SURFACE: RGB = [27, 22, 19]; // --surface in dark mode
 
 const luminance = ([r, g, b]: RGB) => {
   const ch = (v: number) => {
@@ -60,10 +60,16 @@ const readableOnWhiteText = (c: RGB): RGB => {
   for (let i = 0; i < 20 && contrast(out, WHITE) < 4.5; i++) out = mix(out, BLACK, 0.08);
   return out;
 };
-/** Lightens until it stands out on the dark surface (3:1, enough for icons and large text). */
+/** Lightens until text in this colour reads on the dark surface (4.5:1). */
 const visibleOnDark = (c: RGB): RGB => {
   let out = c;
-  for (let i = 0; i < 20 && contrast(out, DARK_SURFACE) < 3.2; i++) out = mix(out, WHITE, 0.1);
+  for (let i = 0; i < 20 && contrast(out, DARK_SURFACE) < 4.5; i++) out = mix(out, WHITE, 0.08);
+  return out;
+};
+/** Darkens until text in this colour reads on its own pale tint (4.5:1). */
+const readableOnTint = (c: RGB, tint: RGB): RGB => {
+  let out = c;
+  for (let i = 0; i < 20 && contrast(out, tint) < 4.5; i++) out = mix(out, BLACK, 0.06);
   return out;
 };
 
@@ -94,10 +100,19 @@ export function accentCss(choice: string | undefined): string {
   const { primary, secondary } = resolveAccent(choice);
   const p = hexToRgb(primary)!;
   const s = hexToRgb(secondary)!;
-  const light = [`--pink: ${triplet(p)}`, `--pink-soft: ${triplet(mix(p, WHITE, 0.88))}`, `--lilac: ${triplet(s)}`, `--lilac-soft: ${triplet(mix(s, WHITE, 0.88))}`];
+  // --pink is the fill behind white text; --pink-ink is the colour used as text (see index.css)
+  const pSoft = mix(p, WHITE, 0.88);
+  const sSoft = mix(s, WHITE, 0.88);
+  const light = [
+    `--pink: ${triplet(p)}`, `--pink-soft: ${triplet(pSoft)}`, `--pink-ink: ${triplet(readableOnTint(p, pSoft))}`, `--pink-deep: ${triplet(mix(p, BLACK, 0.3))}`,
+    `--lilac: ${triplet(s)}`, `--lilac-soft: ${triplet(sSoft)}`, `--lilac-ink: ${triplet(readableOnTint(s, sSoft))}`,
+  ];
   const dp = visibleOnDark(p);
   const ds = visibleOnDark(s);
-  const dark = [`--pink: ${triplet(dp)}`, `--pink-soft: ${triplet(mix(DARK_SURFACE, dp, 0.28))}`, `--lilac: ${triplet(ds)}`, `--lilac-soft: ${triplet(mix(DARK_SURFACE, ds, 0.28))}`];
+  const dark = [
+    `--pink: ${triplet(p)}`, `--pink-soft: ${triplet(mix(DARK_SURFACE, dp, 0.28))}`, `--pink-ink: ${triplet(dp)}`, `--pink-deep: ${triplet(mix(p, BLACK, 0.3))}`,
+    `--lilac: ${triplet(ds)}`, `--lilac-soft: ${triplet(mix(DARK_SURFACE, ds, 0.28))}`, `--lilac-ink: ${triplet(ds)}`,
+  ];
   // "html …" outranks the defaults in index.css (":root, [data-theme]"); the descendant form covers
   // areas that pin their own theme, like the store's always-light wrapper
   return `html:not([data-theme]), html[data-theme='light'], html [data-theme='light'] { ${light.join('; ')}; }\nhtml[data-theme='dark'], html [data-theme='dark'] { ${dark.join('; ')}; }`;

@@ -28,11 +28,8 @@ export function AnimatedCounter({ value, format, className }: { value: number; f
   return <span className={cx('tabular', className)}>{format(shown)}</span>;
 }
 
-// screens are opened many times a day: a short, tight cascade, never a slow show
-export const stagger = {
-  container: { hidden: {}, show: { transition: { staggerChildren: 0.03 } } },
-  item: { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.23, 1, 0.32, 1] as const } } },
-};
+// list and section entrances live with the other motion tokens
+export { stagger } from '../design/motion';
 
 /**
  * Hover/focus tooltip rendered in a portal with fixed positioning, so it is never

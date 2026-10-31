@@ -2,53 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * CakeBoss design tokens (docs: DESIGN.md). Values are "R G B" so Tailwind can add alpha.
+ * Neutrals are tinted from the logo's chocolate and cream; pink is the brand accent.
+ * --pink is the FILL (white text on it passes AA); --pink-ink is pink used AS TEXT.
+ * "lilac" is a legacy name: it now holds cacau, the second brand hue (renamed in Fase 5).
+ */
 :root, [data-theme='light'] {
-  --bg: 248 249 252;
-  --surface: 255 255 255;
-  --subtle: 248 250 252;
-  --border: 226 229 235;
-  --divider: 233 236 241;
-  --text: 24 24 27;
-  --muted: 100 116 139;
+  --bg: 246 243 239;          /* frame: sidebar, top bar and page ground */
+  --surface: 255 255 255;     /* the sheet and cards */
+  --subtle: 248 246 243;      /* raised step inside the sheet */
+  --border: 233 228 223;
+  --divider: 241 237 233;
+  --text: 31 24 20;           /* chocolate ink */
+  --muted: 110 98 91;
   --pink: 219 39 119;
-  --pink-soft: 252 231 243;
-  --lilac: 139 92 246;
-  --lilac-soft: 237 233 254;
-  --green: 5 150 105;
-  --green-soft: 209 250 229;
-  --red: 220 38 38;
-  --red-soft: 254 226 226;
-  --amber: 217 119 6;
-  --amber-soft: 254 243 199;
+  --pink-ink: 190 24 93;
+  --pink-deep: 157 23 77;
+  --pink-soft: 252 231 241;
+  --lilac: 138 90 60;
+  --lilac-ink: 122 76 48;
+  --lilac-soft: 243 234 227;
+  --green: 30 123 79;
+  --green-soft: 220 245 230;
+  --red: 196 36 42;
+  --red-soft: 253 236 234;
+  --amber: 146 64 14;
+  --amber-soft: 254 245 225;
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --bg: 13 11 20;
-  --surface: 23 20 32;
-  --subtle: 30 26 41;
-  --border: 52 46 66;
-  --divider: 42 37 54;
-  --text: 244 244 245;
-  --muted: 161 161 178;
-  --pink: 236 72 153;
-  --pink-soft: 74 22 52;
-  --lilac: 167 139 250;
-  --lilac-soft: 46 35 82;
-  --green: 52 211 153;
-  --green-soft: 6 60 46;
+  --bg: 18 14 12;
+  --surface: 27 22 19;
+  --subtle: 34 28 24;
+  --border: 58 48 42;
+  --divider: 44 36 31;
+  --text: 244 238 233;
+  --muted: 179 166 156;
+  --pink: 214 51 127;
+  --pink-ink: 240 96 159;
+  --pink-deep: 157 23 77;
+  --pink-soft: 74 26 51;
+  --lilac: 210 160 126;
+  --lilac-ink: 210 160 126;
+  --lilac-soft: 58 42 32;
+  --green: 74 222 154;
+  --green-soft: 14 58 38;
   --red: 248 113 113;
-  --red-soft: 76 22 26;
-  --amber: 251 191 36;
-  --amber-soft: 70 46 8;
+  --red-soft: 74 26 28;
+  --amber: 245 181 68;
+  --amber-soft: 68 48 12;
   color-scheme: dark;
+}
+
+/* Motion tokens (same values as src/design/motion.ts) */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 120ms;
+  --dur-fast: 160ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
 }
 
 html, body { background: rgb(var(--bg)); color: rgb(var(--text)); }
 body { font-family: 'Figtree Variable', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-/* the CakeBoss voice: titles in Bricolage Grotesque, whose optical size sharpens its character as it grows */
-h1, h2, .font-display { font-family: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
+/* The panel works in one face (Figtree). Bricolage Grotesque is the CakeBoss voice on the surfaces that
+   persuade (landing, store): it only applies inside data-surface="landing" or "shop", or by .font-display. */
+:is([data-surface='landing'], [data-surface='shop']) :is(h1, h2), .font-display { font-family: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
 ::selection { background: rgb(var(--pink) / 0.18); color: rgb(var(--text)); }
+:focus-visible { outline-color: rgb(var(--pink)); }
+* { scrollbar-color: rgb(var(--border)) transparent; }
+input, textarea { caret-color: rgb(var(--pink)); }
 .tabular { font-variant-numeric: tabular-nums; }
 
 /* Range slider: native input for touch/keyboard, styled track drawn by the component */

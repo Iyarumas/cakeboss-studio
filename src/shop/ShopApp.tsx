@@ -127,7 +127,7 @@ export default function ShopApp() {
     <Ctx.Provider value={ctx}>
       <ToastProvider>
         <AccentStyle choice={db.settings.accentShop ?? db.settings.accentAdmin} />
-        <div data-theme="light" style={shopTheme(!db.settings.accentShop)} className="min-h-screen overflow-x-clip bg-bg text-ink">
+        <div data-theme="light" data-surface="shop" style={shopTheme(!db.settings.accentShop)} className="min-h-screen overflow-x-clip bg-bg text-ink">
           <div className="bg-warn-soft px-4 py-2 text-center text-[13px] text-ink">
             <b>Modo demonstração:</b> cadastros e pedidos ficam salvos só neste navegador e ainda não chegam à confeitaria por outros aparelhos. Login com Google será ativado quando a loja estiver na nuvem.
           </div>
@@ -373,7 +373,7 @@ function shopTheme(withAccent: boolean): CSSProperties {
     '--text': '59 35 20',
     '--muted': '124 90 68',
   };
-  if (withAccent) Object.assign(t, { '--pink': '190 47 85', '--pink-soft': '251 228 233', '--lilac': '180 83 9', '--lilac-soft': '253 236 211' });
+  if (withAccent) Object.assign(t, { '--pink': '190 47 85', '--pink-ink': '163 36 70', '--pink-soft': '251 228 233', '--lilac': '180 83 9', '--lilac-soft': '253 236 211' });
   return t as CSSProperties;
 }
 
