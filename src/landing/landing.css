@@ -73,7 +73,7 @@ html:has(.lp), body:has(.lp) { background: #ffffff; }
 /* navigation: a plain row */
 .lp-nav { display: flex; align-items: center; gap: 28px; height: 84px; font-size: var(--fs-small); }
 .lp-nav__mark { display: flex; align-items: center; gap: 10px; margin-right: auto; font: 700 var(--fs-body)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; letter-spacing: -0.02em; text-decoration: none; }
-.lp-nav__mark img { width: 40px; height: 40px; }
+.lp-nav__mark img { display: block; }
 .lp-nav__links { display: flex; gap: 28px; }
 .lp-nav .lp-btn { height: 44px; padding: 0 20px; font-size: 15px; }
 @media (max-width: 860px) { .lp-nav__links { display: none; } .lp-nav { gap: 16px; } }
@@ -223,17 +223,16 @@ html:has(.lp), body:has(.lp) { background: #ffffff; }
 @media (hover: hover) and (pointer: fine) { .lp-cta__sentence button:hover { background: #be185d; } }
 .lp-cta__after { margin-top: 20px; font-size: var(--fs-small); color: var(--lp-muted); }
 
-/* footer: the mark built from bars, as the chart inside the logo's cake */
-.lp-foot { background: var(--lp-choc); color: var(--lp-cream); padding: calc(var(--lp-pearl) + 40px) 0 32px; }
-.lp-word { display: flex; align-items: flex-end; gap: 4px; height: 26svh; min-height: 180px; margin: 0; }
-.lp-word span { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 0.08em; font: 700 clamp(40px, 8vw, 128px)/1 'Bricolage Grotesque Variable', system-ui, sans-serif; color: var(--lp-cream); }
+/* footer: the logo, unchanged */
+/* the footer closes on the logo itself, on its own cream ground */
+.lp-foot { background: #f6eee6; color: var(--lp-ink); padding: calc(var(--lp-pearl) + 40px) 0 32px; }
 .lp-foot__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; margin-top: 56px; font-size: var(--fs-small); }
 .lp-foot__col { grid-column: span 3; display: flex; flex-direction: column; gap: 10px; }
-.lp-foot__col b { color: #fff; font-weight: 600; }
-.lp-foot__last { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 56px; font-size: var(--fs-small); color: #d8c8bb; }
+.lp-foot__col b { color: var(--lp-ink); font-weight: 600; }
+.lp-foot__logo { display: block; width: min(420px, 70%); height: auto; }
+.lp-foot__last { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 56px; font-size: var(--fs-small); color: var(--lp-muted); }
 .lp-foot__credit { margin-top: 24px; font-size: var(--fs-small); color: #bfae9f; }
 @media (max-width: 860px) {
-  .lp-word { height: 22svh; min-height: 140px; } .lp-word span { font-size: 10vw; }
   .lp-foot__col { grid-column: span 6; margin-bottom: 24px; }
 }
 

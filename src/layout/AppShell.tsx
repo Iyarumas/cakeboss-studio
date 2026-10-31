@@ -12,7 +12,7 @@ import { qtyBase } from '../lib/format';
 import { NAV } from './nav';
 import { AccountMenu, SaveIndicator } from './AccountMenu';
 import { AccentStyle } from '../components/AccentPicker';
-import { BrandMark } from '../components/BrandMark';
+import { BrandLockup } from '../components/BrandMark';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { db } = useStore();
@@ -29,10 +29,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-divider px-5 py-5">
-        <BrandMark size={42} />
         <div className="min-w-0">
-          <div className="font-display text-[19px] font-extrabold text-ink">CakeBoss</div>
-          <div className="truncate text-xs text-muted">{db.settings.businessName || 'Confeitaria artesanal'}</div>
+          <BrandLockup height={30} />
+          <div className="mt-1 truncate text-xs text-muted">{db.settings.businessName || 'Confeitaria artesanal'}</div>
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Principal">
@@ -115,7 +114,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <Menu size={20} />
         </IconButton>
         <span className="flex items-center gap-2 font-bold lg:hidden">
-          <BrandMark size={28} className="rounded-lg" /> <span className="font-display font-extrabold">CakeBoss</span>
+          <BrandLockup height={22} />
         </span>
         <button
           type="button"

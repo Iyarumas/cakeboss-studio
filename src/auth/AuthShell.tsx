@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, u
 import { cloudConfigured } from '../lib/supabase';
 import { cx } from '../components/ui';
 import { DashboardPreview } from './DashboardPreview';
-import { BrandLogo, BrandMark } from '../components/BrandMark';
+import { BrandLockup, BrandLogo } from '../components/BrandMark';
 
 const SLIDES = [
   { src: '/auth/bolo.jpg', pos: '50% 45%', title: 'Cada fatia com o preço certo.', text: 'Ingredientes, gás, embalagem e a sua hora de trabalho entram na conta.' },
@@ -83,8 +83,10 @@ function PhotoStory({ compact }: { compact?: boolean }) {
 
       <div className={compact ? 'absolute left-5 top-5' : 'absolute left-10 top-10'}>
         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease, delay: 0.1 }} className="flex items-center gap-2.5 text-white">
-          <BrandMark size={compact ? 40 : 46} className="shadow-lg ring-white/40" />
-          <span className="font-display text-xl font-extrabold">CakeBoss</span>
+          {/* the chocolate lettering needs a light ground to read over the photo */}
+          <span className="rounded-2xl bg-[#f7efe6]/95 px-3 py-1.5 shadow-lg">
+            <BrandLockup height={compact ? 24 : 28} />
+          </span>
         </motion.div>
       </div>
 

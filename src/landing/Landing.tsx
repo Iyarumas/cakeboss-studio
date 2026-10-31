@@ -6,6 +6,7 @@ import { money } from '../lib/format';
 import { PLANS, TRIAL_DAYS, planPrice } from '../lib/plans';
 import { SAMPLE_QUOTE, landingQuote, type QuoteInput } from './quote';
 import { BRAND_DRAFT_KEY } from './draft';
+import { BrandLockup, LOGO_SRC } from '../components/BrandMark';
 import './landing.css';
 
 
@@ -266,9 +267,6 @@ const STEPS = [
   { time: 'Todo dia', note: 'Então é só registrar pedidos, produção e vendas, no painel ou pela sua loja.', grow: 6, bg: '#2a1a12', ink: '#fbefe4' },
 ];
 
-const WORD = 'CakeBoss'.split('');
-// deep bars with cream letters: the mark reads as bars of the logo's chart, all in brand tones
-const WORD_COLORS = ['#8a5a3c', '#db2777', '#5b3420', '#be185d', '#8a5a3c', '#db2777', '#5b3420', '#be185d'];
 
 export default function Landing() {
   const root = useRef<HTMLDivElement>(null);
@@ -297,8 +295,7 @@ export default function Landing() {
         <div className="lp-wrap">
           <nav className="lp-nav" aria-label="Principal">
             <Link to="/" className="lp-nav__mark">
-              <img src="/brand/cakeboss-mark.webp" alt="" width={40} height={40} />
-              CakeBoss
+              <BrandLockup height={34} />
             </Link>
             <div className="lp-nav__links">
               <a className="lp-link" href="#como-funciona">
@@ -502,13 +499,7 @@ export default function Landing() {
 
       <footer className="lp-foot pearl-top">
         <div className="lp-wrap">
-          <p className="lp-word" aria-label="CakeBoss">
-            {WORD.map((ch, i) => (
-              <span key={i} style={{ height: `${58 + i * 6}%`, background: WORD_COLORS[i] }}>
-                {ch}
-              </span>
-            ))}
-          </p>
+          <img className="lp-foot__logo" src={LOGO_SRC} alt="CakeBoss" width={1105} height={1071} loading="lazy" />
           <div className="lp-foot__grid">
             <div className="lp-foot__col">
               <b>Produto</b>
