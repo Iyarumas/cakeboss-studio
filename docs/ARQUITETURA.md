@@ -102,7 +102,7 @@ Regras principais:
 
 - Preços e recursos ficam **só na tabela `plans`**. Mudar um preço é um `UPDATE`; o app e a landing leem de lá.
 - Estados da assinatura: `trialing`, `billing_not_configured`, `pending_payment`, `active`, `past_due`, `canceled`, `expired`, `test_grant`.
-- **Teste grátis (decidido em 01/11):** a primeira escolha de plano de cada confeitaria abre **14 dias de teste** do plano escolhido (`trialing`). Dá para trocar de plano durante o teste sem mudar a data de fim. É uma vez por confeitaria e nunca aparece como pago. Ao vencer, os recursos pagos param (os dados continuam guardados e visíveis) até haver assinatura paga.
+- **Teste grátis (decidido em 01/11):** o teste é **só do plano Básico**: 14 dias (`trialing`), uma vez por confeitaria. Premium e Plus não têm teste, e subir de plano durante o teste exige assinatura paga. **Cartão obrigatório para o teste:** pedido em 01/11 — o cartão é coletado pelo checkout oficial do gateway de assinaturas (o CakeBoss nunca guarda dados de cartão); ver decisão pendente na seção 11. É uma vez por confeitaria e nunca aparece como pago. Ao vencer, os recursos pagos param (os dados continuam guardados e visíveis) até haver assinatura paga.
 - **Cobrança do CakeBoss desconfigurada (decisão do proprietário):** depois do teste, `choose_plan` registra o plano escolhido como `billing_not_configured`, que **não libera recursos pagos** e nunca aparece como pago. A ativação real só acontece quando a Edge Function de cobrança receber a confirmação do gateway, depois de você configurar suas credenciais.
 - **Testes de plano:** só por concessão administrativa (`test_grant`), com motivo e autor obrigatórios, feita por quem está em `platform_admins`. Não existe caminho público para isso.
 - **Upgrade/downgrade:** upgrade cobra a diferença pelo gateway; downgrade fica agendado (`scheduled_plan_code`) para a renovação. Cancelamento: `cancel_at_period_end`.
@@ -179,6 +179,7 @@ docker rm -f cakeboss-pgtest
 ## 11. Decisões que dependem de você
 
 1. ~~Acesso de quem acaba de criar conta~~ — **decidido: teste grátis de 14 dias** (seção 5).
+1b. **Cartão no teste enquanto a cobrança está desligada:** sem gateway de assinaturas não há onde cadastrar cartão. Definir se o teste fica suspenso até a cobrança ser ativada ou se começa sem cartão e pede o cartão quando a cobrança for ligada.
 2. **Contas que já existem** (a sua e a da sua esposa): a migração dá uma concessão explícita do plano equivalente (`loja → Premium`). Se quiser outro plano para elas, é só dizer.
 3. **Stripe no Brasil** — confirmar antes da Fase 9.
 4. **Credenciais de teste** do Mercado Pago (aplicativo de desenvolvedor) para a Fase 9.

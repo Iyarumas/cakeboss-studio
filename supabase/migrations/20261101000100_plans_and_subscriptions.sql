@@ -169,8 +169,8 @@ revoke all on function public.my_workspace_access(uuid) from public, anon;
 grant execute on function public.my_workspace_access(uuid) to authenticated;
 
 -- Escolha de plano pelo dono.
---  · primeira vez da confeitaria: teste grátis de 14 dias do plano escolhido ('trialing');
---  · durante o teste: pode trocar de plano, a data de fim continua a mesma;
+--  · primeira vez da confeitaria, plano Básico: teste grátis de 14 dias ('trialing');
+--  · Premium e Plus não têm teste; durante o teste, subir de plano exige assinatura paga;
 --  · depois do teste (ou se já teve um): fica 'billing_not_configured' e NÃO libera recursos pagos
 --    enquanto a cobrança do CakeBoss não existir. A ativação paga vem só do servidor.
 create or replace function public.choose_plan(ws uuid, plan text)
@@ -192,13 +192,14 @@ begin
   had_trial := exists (select 1 from public.subscriptions s where s.workspace_id = ws and s.trial_ends_at is not null);
 
   if found and cur.status = 'trialing' and cur.trial_ends_at > now() then
-    update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, updated_at = now() where id = cur.id;
+    -- o teste é só do Básico: subir de plano durante o teste exige assinatura paga
+    if p.code <> 'basico' then raise exception 'troca de plano precisa do sistema de cobrança' using errcode = 'P0001'; end if;
     result := 'trialing';
   elsif found then
     -- teste vencido ou escolha anterior sem cobrança
     update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, status = 'billing_not_configured', updated_at = now() where id = cur.id;
     result := 'billing_not_configured';
-  elsif not had_trial then
+  elsif not had_trial and p.code = 'basico' then
     insert into public.subscriptions (workspace_id, plan_code, status, price_cents, trial_ends_at, current_period_start, current_period_end)
     values (ws, p.code, 'trialing', p.price_cents, now() + interval '14 days', now(), now() + interval '14 days');
     result := 'trialing';

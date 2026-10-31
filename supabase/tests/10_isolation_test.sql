@@ -147,11 +147,23 @@ do $$ declare ws uuid; begin
   set local role authenticated;
   ws := public.create_workspace('Doces Novos', '{"settings": {"ownerName": "Nova"}}');
   assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'conta sem plano liberou recursos';
-  assert public.choose_plan(ws, 'plus') = 'trialing', 'primeira escolha deveria abrir o teste';
-  assert public.my_workspace_access(ws)->'features' ? 'mensagens', 'teste do Plus deveria liberar mensagens';
+  -- Plus não tem teste: fica sem cobrança e sem recursos
+  assert public.choose_plan(ws, 'plus') = 'billing_not_configured', 'Plus não deveria ter teste';
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'Plus sem cobrança liberou recursos';
+  reset role;
+  delete from public.subscriptions where workspace_id = ws;
+  set local role authenticated;
+  -- Básico abre o teste
+  assert public.choose_plan(ws, 'basico') = 'trialing', 'Básico deveria abrir o teste';
+  assert public.my_workspace_access(ws)->'features' = '["gestao"]'::jsonb, 'teste do Básico libera só gestão';
   assert (public.my_workspace_access(ws)#>>'{subscription,trial_ends_at}')::timestamptz between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour', 'teste de 14 dias';
-  -- troca de plano durante o teste mantém a data de fim
-  assert public.choose_plan(ws, 'basico') = 'trialing', 'troca durante o teste';
+  -- subir de plano durante o teste exige cobrança
+  begin
+    perform public.choose_plan(ws, 'premium');
+    raise exception 'FALHOU: subiu para Premium no teste';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+  end;
   assert not (public.my_workspace_access(ws)->'features' ? 'loja'), 'Básico em teste liberou loja';
   -- vencimento do teste (simulado pelo servidor)
   reset role;
