@@ -52,7 +52,7 @@ alter table public.platform_admins enable row level security;
 --   pending_payment:       aguardando o gateway confirmar
 --   active / past_due / canceled / expired: estados do gateway
 --   test_grant:            concessão administrativa explícita (teste ou cortesia), nunca "paga"
---   trialing:              teste grátis de 14 dias, uma vez por confeitaria, nunca "pago"
+--   trialing:              teste grátis do Básico (3 dias, com cartão cadastrado), nunca "pago"
 -- ---------------------------------------------------------------------------
 create table public.subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -168,53 +168,102 @@ $$;
 revoke all on function public.my_workspace_access(uuid) from public, anon;
 grant execute on function public.my_workspace_access(uuid) to authenticated;
 
--- Escolha de plano pelo dono.
---  · primeira vez da confeitaria, plano Básico: teste grátis de 14 dias ('trialing');
---  · Premium e Plus não têm teste; durante o teste, subir de plano exige assinatura paga;
---  · depois do teste (ou se já teve um): fica 'billing_not_configured' e NÃO libera recursos pagos
---    enquanto a cobrança do CakeBoss não existir. A ativação paga vem só do servidor.
+-- ---------------------------------------------------------------------------
+-- Chave geral da cobrança do CakeBoss. Fica DESLIGADA até o proprietário configurar o gateway
+-- (credenciais só nas variáveis da Edge Function, nunca aqui).
+-- ---------------------------------------------------------------------------
+create table private.billing_settings (
+  id boolean primary key default true check (id),
+  enabled boolean not null default false,
+  provider text check (provider in ('mercadopago', 'stripe')),
+  mode text check (mode in ('test', 'live')),
+  trial_days integer not null default 3 check (trial_days between 0 and 30),
+  updated_at timestamptz not null default now()
+);
+insert into private.billing_settings default values;
+
+-- Um teste grátis por cartão: o gateway devolve a "impressão digital" do cartão; guardamos só um hash dela
+create table private.trial_fingerprints (
+  provider text not null,
+  fingerprint_hash text not null,
+  workspace_id uuid references public.workspaces(id) on delete set null,
+  used_at timestamptz not null default now(),
+  primary key (provider, fingerprint_hash)
+);
+
+-- Escolha de plano pelo dono (tela de planos, logo após o cadastro).
+--  · cobrança desligada: registra a escolha como 'billing_not_configured' — nenhum recurso pago é liberado;
+--  · cobrança ligada: registra como 'pending_payment' e o app abre o checkout do gateway (Edge Function billing):
+--      - Básico, primeira vez: cadastro do cartão + teste de 3 dias, cobrado sozinho ao fim do teste;
+--      - Pix: paga o primeiro mês na hora, sem teste;
+--      - Premium e Plus: sem teste.
+--  O teste e a ativação só começam quando o servidor confirma o gateway (private.start_trial / ativação paga).
 create or replace function public.choose_plan(ws uuid, plan text)
-returns text language plpgsql security definer set search_path = '' as $$
+returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   p public.plans%rowtype;
   cur public.subscriptions%rowtype;
-  had_trial boolean;
-  result text;
+  billing private.billing_settings%rowtype;
+  new_status text;
+  has_cur boolean;
+  trial_eligible boolean;
 begin
   if not private.is_manager(ws) then raise exception 'forbidden' using errcode = '42501'; end if;
   select * into p from public.plans where code = plan and active;
   if not found then raise exception 'plano inválido' using errcode = '22023'; end if;
   select * into cur from public.subscriptions where workspace_id = ws and status not in ('canceled', 'expired') order by created_at desc limit 1;
-  if found and cur.status in ('active', 'past_due', 'test_grant', 'pending_payment') then
-    -- upgrade/downgrade de assinatura paga passam pelo gateway (Edge Function billing)
+  -- guardado já: as leituras seguintes sobrescrevem o FOUND
+  has_cur := found;
+  if has_cur and (cur.status in ('active', 'past_due', 'test_grant') or (cur.status = 'trialing' and cur.trial_ends_at > now())) then
+    -- upgrade/downgrade de assinatura em andamento passam pelo gateway (Edge Function billing)
     raise exception 'troca de plano precisa do sistema de cobrança' using errcode = 'P0001';
   end if;
-  had_trial := exists (select 1 from public.subscriptions s where s.workspace_id = ws and s.trial_ends_at is not null);
 
-  if found and cur.status = 'trialing' and cur.trial_ends_at > now() then
-    -- o teste é só do Básico: subir de plano durante o teste exige assinatura paga
-    if p.code <> 'basico' then raise exception 'troca de plano precisa do sistema de cobrança' using errcode = 'P0001'; end if;
-    result := 'trialing';
-  elsif found then
-    -- teste vencido ou escolha anterior sem cobrança
-    update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, status = 'billing_not_configured', updated_at = now() where id = cur.id;
-    result := 'billing_not_configured';
-  elsif not had_trial and p.code = 'basico' then
-    insert into public.subscriptions (workspace_id, plan_code, status, price_cents, trial_ends_at, current_period_start, current_period_end)
-    values (ws, p.code, 'trialing', p.price_cents, now() + interval '14 days', now(), now() + interval '14 days');
-    result := 'trialing';
+  select * into billing from private.billing_settings;
+  new_status := case when billing.enabled then 'pending_payment' else 'billing_not_configured' end;
+  trial_eligible := billing.enabled and billing.trial_days > 0 and p.code = 'basico'
+                    and not exists (select 1 from public.subscriptions s where s.workspace_id = ws and s.trial_ends_at is not null);
+
+  if has_cur then
+    update public.subscriptions set plan_code = p.code, price_cents = p.price_cents, status = new_status, updated_at = now() where id = cur.id;
   else
-    insert into public.subscriptions (workspace_id, plan_code, status, price_cents) values (ws, p.code, 'billing_not_configured', p.price_cents);
-    result := 'billing_not_configured';
+    insert into public.subscriptions (workspace_id, plan_code, status, price_cents) values (ws, p.code, new_status, p.price_cents);
   end if;
 
   insert into public.billing_events (subscription_id, workspace_id, kind, status, amount_cents, detail)
-  select s.id, ws, 'status_change', 'info', 0,
-         jsonb_build_object('plano_escolhido', p.code, 'estado', result, 'teste_ate', s.trial_ends_at, 'cobranca', 'nao_configurada')
-    from public.subscriptions s where s.workspace_id = ws and s.status in ('trialing', 'billing_not_configured')
-   order by s.created_at desc limit 1;
-  return result;
+  select s.id, ws, 'status_change', 'info', 0, jsonb_build_object('plano_escolhido', p.code, 'estado', new_status, 'teste_disponivel', trial_eligible)
+    from public.subscriptions s where s.workspace_id = ws and s.status = new_status order by s.created_at desc limit 1;
+
+  return jsonb_build_object('status', new_status, 'plan', p.code, 'price_cents', p.price_cents,
+                            'trial_eligible', trial_eligible, 'trial_days', case when trial_eligible then billing.trial_days else 0 end);
 end;
 $$;
 revoke all on function public.choose_plan(uuid, text) from public, anon;
 grant execute on function public.choose_plan(uuid, text) to authenticated;
+
+-- Chamado só pelo servidor (Edge Function), depois que o gateway confirmou o cartão cadastrado.
+-- Recusa o teste se o mesmo cartão já fez teste em qualquer confeitaria.
+create or replace function private.start_trial(ws uuid, prov text, card_fingerprint text, gateway_subscription_id text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare
+  billing private.billing_settings%rowtype;
+  h text := encode(sha256(convert_to(prov || ':' || card_fingerprint, 'UTF8')), 'hex');
+begin
+  select * into billing from private.billing_settings;
+  if not billing.enabled then raise exception 'cobrança desligada' using errcode = 'P0001'; end if;
+  if exists (select 1 from private.trial_fingerprints f where f.provider = prov and f.fingerprint_hash = h) then return false; end if;
+  if exists (select 1 from public.subscriptions s where s.workspace_id = ws and s.trial_ends_at is not null) then return false; end if;
+  update public.subscriptions
+     set status = 'trialing', provider = prov, provider_subscription_id = gateway_subscription_id,
+         trial_ends_at = now() + make_interval(days => billing.trial_days),
+         current_period_start = now(), current_period_end = now() + make_interval(days => billing.trial_days), updated_at = now()
+   where workspace_id = ws and status = 'pending_payment' and plan_code = 'basico';
+  if not found then return false; end if;
+  insert into private.trial_fingerprints (provider, fingerprint_hash, workspace_id) values (prov, h, ws);
+  insert into public.billing_events (subscription_id, workspace_id, kind, status, provider, detail)
+  select id, ws, 'status_change', 'info', prov, jsonb_build_object('teste_iniciado_ate', trial_ends_at)
+    from public.subscriptions where workspace_id = ws and status = 'trialing';
+  return true;
+end;
+$$;
+revoke all on function private.start_trial(uuid, text, text, text) from public, anon, authenticated;

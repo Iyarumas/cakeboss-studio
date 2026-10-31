@@ -140,37 +140,17 @@ do $$ begin
 end $$;
 reset role;
 
--- 10. Conta nova: teste grátis de 14 dias, uma vez só; depois, sem cobrança, nada pago fica liberado
-do $$ declare ws uuid; begin
-  insert into auth.users values ('55555555-5555-5555-5555-555555555555', 'nova@teste');
+-- 10. Conta nova e teste grátis do Básico (3 dias, só com cartão confirmado pelo gateway)
+do $$ declare ws uuid; ws2 uuid; r jsonb; begin
+  insert into auth.users values ('55555555-5555-5555-5555-555555555555', 'nova@teste'), ('66666666-6666-6666-6666-666666666666', 'outra@teste');
   perform set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false);
   set local role authenticated;
   ws := public.create_workspace('Doces Novos', '{"settings": {"ownerName": "Nova"}}');
   assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'conta sem plano liberou recursos';
-  -- Plus não tem teste: fica sem cobrança e sem recursos
-  assert public.choose_plan(ws, 'plus') = 'billing_not_configured', 'Plus não deveria ter teste';
-  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'Plus sem cobrança liberou recursos';
-  reset role;
-  delete from public.subscriptions where workspace_id = ws;
-  set local role authenticated;
-  -- Básico abre o teste
-  assert public.choose_plan(ws, 'basico') = 'trialing', 'Básico deveria abrir o teste';
-  assert public.my_workspace_access(ws)->'features' = '["gestao"]'::jsonb, 'teste do Básico libera só gestão';
-  assert (public.my_workspace_access(ws)#>>'{subscription,trial_ends_at}')::timestamptz between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour', 'teste de 14 dias';
-  -- subir de plano durante o teste exige cobrança
-  begin
-    perform public.choose_plan(ws, 'premium');
-    raise exception 'FALHOU: subiu para Premium no teste';
-  exception when raise_exception then
-    if sqlerrm like 'FALHOU%' then raise; end if;
-  end;
-  assert not (public.my_workspace_access(ws)->'features' ? 'loja'), 'Básico em teste liberou loja';
-  -- vencimento do teste (simulado pelo servidor)
-  reset role;
-  update public.subscriptions set trial_ends_at = now() - interval '1 minute' where workspace_id = ws;
-  set local role authenticated;
-  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'teste vencido continuou liberado';
-  assert public.choose_plan(ws, 'premium') = 'billing_not_configured', 'segundo teste não pode existir';
+
+  -- cobrança desligada: escolher plano não libera nada e não oferece teste
+  r := public.choose_plan(ws, 'basico');
+  assert r->>'status' = 'billing_not_configured' and not (r->>'trial_eligible')::boolean, 'cobrança desligada não oferece teste';
   assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'escolha sem cobrança liberou recursos';
   begin
     insert into public.recipes (workspace_id, id, name, composition) values (ws, 'r', 'x', '{}');
@@ -178,8 +158,53 @@ do $$ declare ws uuid; begin
   exception when insufficient_privilege then null;
   end;
   reset role;
-  assert not exists (select 1 from public.subscriptions where workspace_id = ws and status in ('active', 'past_due')), 'teste virou pago';
-  raise notice 'ok 10: teste grátis de 14 dias, uma vez só, nunca marcado como pago';
+
+  -- proprietário liga a cobrança (simulado)
+  update private.billing_settings set enabled = true, provider = 'stripe', mode = 'test';
+  set local role authenticated;
+  r := public.choose_plan(ws, 'plus');
+  assert r->>'status' = 'pending_payment' and not (r->>'trial_eligible')::boolean, 'Plus não tem teste';
+  r := public.choose_plan(ws, 'basico');
+  assert (r->>'trial_eligible')::boolean and (r->>'trial_days')::int = 3, 'Básico oferece 3 dias';
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'teste começou antes do cartão';
+  -- navegador não consegue iniciar o teste sozinho
+  begin
+    perform private.start_trial(ws, 'stripe', 'card_x', 'sub_1');
+    raise exception 'FALHOU: navegador iniciou o teste';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+
+  -- servidor confirma o cartão: teste de 3 dias, só gestão
+  assert private.start_trial(ws, 'stripe', 'card_x', 'sub_1'), 'teste não iniciou';
+  set local role authenticated;
+  assert public.my_workspace_access(ws)->'features' = '["gestao"]'::jsonb, 'teste do Básico libera só gestão';
+  assert (public.my_workspace_access(ws)#>>'{subscription,trial_ends_at}')::timestamptz between now() + interval '2 days 23 hours' and now() + interval '3 days 1 hour', 'teste de 3 dias';
+  begin
+    perform public.choose_plan(ws, 'premium');
+    raise exception 'FALHOU: trocou de plano no teste sem gateway';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+  end;
+  reset role;
+
+  -- mesmo cartão em outra conta: sem segundo teste
+  perform set_config('request.jwt.claim.sub', '66666666-6666-6666-6666-666666666666', false);
+  set local role authenticated;
+  ws2 := public.create_workspace('Outra Conta', '{}');
+  perform public.choose_plan(ws2, 'basico');
+  reset role;
+  assert not private.start_trial(ws2, 'stripe', 'card_x', 'sub_2'), 'mesmo cartão ganhou segundo teste';
+
+  -- teste vence
+  update public.subscriptions set trial_ends_at = now() - interval '1 minute' where workspace_id = ws;
+  perform set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false);
+  set local role authenticated;
+  assert public.my_workspace_access(ws)->'features' = '[]'::jsonb, 'teste vencido continuou liberado';
+  reset role;
+  assert not exists (select 1 from public.subscriptions where status in ('active', 'past_due')), 'teste virou pago';
+  update private.billing_settings set enabled = false;
+  raise notice 'ok 10: teste de 3 dias só do Básico, só com cartão, um por cartão, nunca pago';
 end $$;
 
 select 'TODOS OS TESTES PASSARAM' as resultado;

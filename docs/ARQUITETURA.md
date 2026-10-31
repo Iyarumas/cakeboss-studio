@@ -102,8 +102,12 @@ Regras principais:
 
 - Preços e recursos ficam **só na tabela `plans`**. Mudar um preço é um `UPDATE`; o app e a landing leem de lá.
 - Estados da assinatura: `trialing`, `billing_not_configured`, `pending_payment`, `active`, `past_due`, `canceled`, `expired`, `test_grant`.
-- **Teste grátis (decidido em 01/11):** o teste é **só do plano Básico**: 14 dias (`trialing`), uma vez por confeitaria. Premium e Plus não têm teste, e subir de plano durante o teste exige assinatura paga. **Cartão obrigatório para o teste:** pedido em 01/11 — o cartão é coletado pelo checkout oficial do gateway de assinaturas (o CakeBoss nunca guarda dados de cartão); ver decisão pendente na seção 11. É uma vez por confeitaria e nunca aparece como pago. Ao vencer, os recursos pagos param (os dados continuam guardados e visíveis) até haver assinatura paga.
-- **Cobrança do CakeBoss desconfigurada (decisão do proprietário):** depois do teste, `choose_plan` registra o plano escolhido como `billing_not_configured`, que **não libera recursos pagos** e nunca aparece como pago. A ativação real só acontece quando a Edge Function de cobrança receber a confirmação do gateway, depois de você configurar suas credenciais.
+- **Cadastro e pagamento (decidido em 01/11):** depois de criar a conta, a pessoa vê os três planos com os preços e escolhe como pagar, no **checkout oficial do gateway** (o CakeBoss nunca vê nem guarda dados de cartão):
+  - **Cartão:** fica cadastrado para a cobrança mensal automática.
+  - **Pix:** paga o primeiro mês na hora; o plano é liberado quando o pagamento é confirmado. Sem teste grátis.
+  - **Teste grátis:** **só do Básico**, **3 dias**, e **só com cartão cadastrado**. Começa quando o servidor recebe a confirmação do cartão (`private.start_trial`, sem acesso pelo navegador) e é cobrado sozinho ao fim do teste. Um teste por confeitaria e **um por cartão**: o gateway informa a "impressão digital" do cartão e o banco guarda só um hash dela, então criar outro e-mail não dá outro teste. Premium e Plus não têm teste; subir de plano durante o teste passa pelo gateway. Vencido o teste sem pagamento, os recursos pagos param (os dados continuam guardados).
+  - **Básico não tem loja:** a vitrine só abre com o recurso `loja` (Premium e Plus). No painel do Básico os menus de loja e mensagens ficam ocultos (Fase 5), mas a proteção real é a do banco.
+- **Cobrança do CakeBoss desconfigurada (decisão do proprietário):** a chave `private.billing_settings.enabled` começa **desligada**. Assim, `choose_plan` registra a escolha como `billing_not_configured`, que **não libera recursos pagos**, não oferece teste e nunca aparece como pago; só entra quem você liberar manualmente (`test_grant`). Quando você configurar o gateway e ligar a chave, o fluxo de cartão, Pix e teste passa a funcionar sem mudar o app. A duração do teste também fica nessa tabela (`trial_days = 3`).
 - **Testes de plano:** só por concessão administrativa (`test_grant`), com motivo e autor obrigatórios, feita por quem está em `platform_admins`. Não existe caminho público para isso.
 - **Upgrade/downgrade:** upgrade cobra a diferença pelo gateway; downgrade fica agendado (`scheduled_plan_code`) para a renovação. Cancelamento: `cancel_at_period_end`.
 - **Futuro painel financeiro central:** `saas_products.code = 'cakeboss'` + `subscriptions` + `billing_events` (valor, status, provedor, id da transação, reembolsos, cancelamentos, datas). Sem exposição pública; quando for feito, será uma API administrativa autenticada. Os recebimentos das confeitarias (`payments`) ficam em tabelas separadas e nunca se misturam com a receita do CakeBoss.
@@ -165,7 +169,7 @@ Economia: um projeto de cada; consultas por índice começando em `workspace_id`
   7. funcionária não exclui nem mexe em pagamentos;
   8. vitrine pública não expõe fichas, custos ou clientes, e não oferece pagamento online sem gateway;
   9. comprador vê só os próprios pedidos;
-  10. conta nova ganha 14 dias de teste uma vez só; vencido o teste e sem cobrança, nada pago fica liberado nem é gravado, e o teste nunca vira "pago".
+  10. com a cobrança desligada, escolher plano não libera nada nem oferece teste; com ela ligada, só o Básico oferece teste, de 3 dias, que começa apenas quando o servidor confirma o cartão; o mesmo cartão não ganha segundo teste em outra conta; vencido, nada fica liberado; o teste nunca vira "pago".
 
 Para repetir:
 
@@ -178,8 +182,7 @@ docker rm -f cakeboss-pgtest
 
 ## 11. Decisões que dependem de você
 
-1. ~~Acesso de quem acaba de criar conta~~ — **decidido: teste grátis de 14 dias** (seção 5).
-1b. **Cartão no teste enquanto a cobrança está desligada:** sem gateway de assinaturas não há onde cadastrar cartão. Definir se o teste fica suspenso até a cobrança ser ativada ou se começa sem cartão e pede o cartão quando a cobrança for ligada.
+1. ~~Acesso de quem acaba de criar conta~~ — **decidido:** teste de 3 dias só do Básico, com cartão; Pix paga na hora (seção 5).
 2. **Contas que já existem** (a sua e a da sua esposa): a migração dá uma concessão explícita do plano equivalente (`loja → Premium`). Se quiser outro plano para elas, é só dizer.
 3. **Stripe no Brasil** — confirmar antes da Fase 9.
 4. **Credenciais de teste** do Mercado Pago (aplicativo de desenvolvedor) para a Fase 9.
