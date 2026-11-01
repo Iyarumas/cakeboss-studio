@@ -433,7 +433,7 @@ export function StockPage() {
 
 export function HistoryPage() {
   const { db } = useStore();
-  const tone = { preco: 'pink', ficha: 'lilac', insumo: 'amber', producao: 'green', simulacao: 'gray', config: 'gray', sistema: 'gray', pedido: 'lilac', financeiro: 'green' } as const;
+  const tone = { preco: 'pink', ficha: 'cacau', insumo: 'amber', producao: 'green', simulacao: 'gray', config: 'gray', sistema: 'gray', pedido: 'cacau', financeiro: 'green' } as const;
   const label = { preco: 'Preço', ficha: 'Ficha', insumo: 'Insumo', producao: 'Produção', simulacao: 'Simulação', config: 'Configuração', sistema: 'Sistema', pedido: 'Pedido', financeiro: 'Financeiro' };
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show">

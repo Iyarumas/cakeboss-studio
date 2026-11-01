@@ -27,7 +27,7 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: R
   return (
     <section className="rounded-2xl border border-line bg-surface p-4">
       <h3 className="flex items-center gap-2.5 font-semibold">
-        <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-pink to-lilac text-xs text-white">{n}</span>
+        <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-pink to-cacau text-xs text-white">{n}</span>
         {title}
       </h3>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
@@ -266,7 +266,7 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
         </div>
         {c.sizes.some((s) => s.diameter > 0) && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-subtle px-3 py-2 text-xs text-muted">
-            <Sparkles size={13} className="text-lilac" />
+            <Sparkles size={13} className="text-cacau" />
             Não sabe as quantidades? Se suas fichas são para um bolo de
             <NumberInput value={c.refDiameter} min={1} suffix="cm" onChange={(v) => set({ refDiameter: v })} className="w-24" />
             <button

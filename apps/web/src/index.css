@@ -6,7 +6,7 @@
  * CakeBoss design tokens (docs: DESIGN.md). Values are "R G B" so Tailwind can add alpha.
  * Neutrals are tinted from the logo's chocolate and cream; pink is the brand accent.
  * --pink is the FILL (white text on it passes AA); --pink-ink is pink used AS TEXT.
- * "lilac" is a legacy name: it now holds cacau, the second brand hue (renamed in Fase 5).
+ * cacau: the second brand hue (chocolate).
  */
 :root, [data-theme='light'] {
   --bg: 246 243 239;          /* frame: sidebar, top bar and page ground */
@@ -20,9 +20,9 @@
   --pink-ink: 190 24 93;
   --pink-deep: 157 23 77;
   --pink-soft: 252 231 241;
-  --lilac: 138 90 60;
-  --lilac-ink: 122 76 48;
-  --lilac-soft: 243 234 227;
+  --cacau: 138 90 60;
+  --cacau-ink: 122 76 48;
+  --cacau-soft: 243 234 227;
   --green: 30 123 79;
   --green-soft: 220 245 230;
   --red: 196 36 42;
@@ -44,9 +44,9 @@
   --pink-ink: 240 96 159;
   --pink-deep: 157 23 77;
   --pink-soft: 74 26 51;
-  --lilac: 210 160 126;
-  --lilac-ink: 210 160 126;
-  --lilac-soft: 58 42 32;
+  --cacau: 210 160 126;
+  --cacau-ink: 210 160 126;
+  --cacau-soft: 58 42 32;
   --green: 74 222 154;
   --green-soft: 14 58 38;
   --red: 248 113 113;

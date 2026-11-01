@@ -12,7 +12,7 @@ export function CardHeader({ title, subtitle, icon, actions, className }: { titl
   return (
     <header className={cx('flex flex-wrap items-start justify-between gap-3 border-b border-divider px-5 py-4', className)}>
       <div className="flex min-w-0 items-start gap-3">
-        {icon && <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-pink-soft text-pink">{icon}</span>}
+        {icon && <span className="mt-0.5 shrink-0 text-muted">{icon}</span>}
         <div className="min-w-0">
           <h2 className="truncate text-[15px] font-semibold text-ink">{title}</h2>
           {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
@@ -142,7 +142,7 @@ const badgeTone = {
   green: 'bg-profit-soft text-profit',
   red: 'bg-loss-soft text-loss',
   amber: 'bg-warn-soft text-warn',
-  lilac: 'bg-lilac-soft text-lilac',
+  cacau: 'bg-cacau-soft text-cacau',
   gray: 'bg-subtle text-muted border border-line',
 };
 export function Badge({ tone = 'gray', children, className }: { tone?: keyof typeof badgeTone; children: ReactNode; className?: string }) {
@@ -211,7 +211,7 @@ export function SliderField({
       <div className="relative">
         <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-divider" />
         <motion.div
-          className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-lilac to-pink"
+          className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-cacau to-pink"
           animate={{ width: `${p}%` }}
           transition={{ type: 'spring', stiffness: 380, damping: 34 }}
         />

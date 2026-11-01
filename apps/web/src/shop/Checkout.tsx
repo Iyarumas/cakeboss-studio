@@ -145,7 +145,7 @@ export default function Checkout() {
                 </motion.div>
               ) : (
                 <motion.div key="r" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5 flex items-start gap-3 rounded-2xl bg-subtle p-4 text-sm">
-                  <Store size={18} className="mt-0.5 shrink-0 text-lilac" />
+                  <Store size={18} className="mt-0.5 shrink-0 text-cacau" />
                   <span>{st.pickupAddress ? <>Retire em <b>{st.pickupAddress}</b>.</> : 'O endereço de retirada será confirmado pelo WhatsApp.'} Sem custo de frete.</span>
                 </motion.div>
               )}
@@ -258,7 +258,7 @@ function Block({ n, title, children }: { n: number; title: string; children: Rea
   return (
     <section className="rounded-3xl border border-line bg-surface p-6 shadow-card">
       <h2 className="mb-4 flex items-center gap-3 text-lg font-semibold">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-pink to-lilac text-sm text-white">{n}</span>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-pink to-cacau text-sm text-white">{n}</span>
         {title}
       </h2>
       {children}

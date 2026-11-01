@@ -15,7 +15,7 @@ const COLUMNS: { status: OrderStatus; hint: string }[] = [
   { status: 'entregue', hint: 'Últimos 7 dias' },
 ];
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = { confirmado: 'em_producao', em_producao: 'pronto', pronto: 'entregue' };
-const DOT: Record<OrderStatus, string> = { orcamento: 'bg-muted', confirmado: 'bg-lilac', em_producao: 'bg-pink', pronto: 'bg-warn', entregue: 'bg-profit', cancelado: 'bg-loss' };
+const DOT: Record<OrderStatus, string> = { orcamento: 'bg-muted', confirmado: 'bg-cacau', em_producao: 'bg-pink', pronto: 'bg-warn', entregue: 'bg-profit', cancelado: 'bg-loss' };
 const PAY_LABEL = { pago: 'Pago', parcial: 'Parcial', pendente: 'A receber' };
 const PAY_TONE = { pago: 'green', parcial: 'amber', pendente: 'gray' } as const;
 

@@ -14,15 +14,15 @@ export default {
         ink: c('text'),
         muted: c('muted'),
         pink: { DEFAULT: c('pink'), soft: c('pink-soft'), deep: c('pink-deep'), ink: c('pink-ink') },
-        lilac: { DEFAULT: c('lilac'), soft: c('lilac-soft'), ink: c('lilac-ink') },
+        cacau: { DEFAULT: c('cacau'), soft: c('cacau-soft'), ink: c('cacau-ink') },
         profit: { DEFAULT: c('green'), soft: c('green-soft') },
         loss: { DEFAULT: c('red'), soft: c('red-soft') },
         warn: { DEFAULT: c('amber'), soft: c('amber-soft') },
       },
-      // pink and lilac used as TEXT take the ink tone, so text-pink stays AA on white, on its soft tint and in dark mode
+      // pink and cacau used as TEXT take the ink tone, so text-pink stays AA on white, on its soft tint and in dark mode
       textColor: {
         pink: { DEFAULT: c('pink-ink'), soft: c('pink-soft'), deep: c('pink-deep'), ink: c('pink-ink') },
-        lilac: { DEFAULT: c('lilac-ink'), soft: c('lilac-soft'), ink: c('lilac-ink') },
+        cacau: { DEFAULT: c('cacau-ink'), soft: c('cacau-soft'), ink: c('cacau-ink') },
       },
       fontFamily: {
         sans: ['"Figtree Variable"', 'system-ui', 'sans-serif'],

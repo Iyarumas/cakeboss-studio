@@ -56,7 +56,7 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Conta"
-        className="grid h-8 w-8 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac ring-1 ring-lilac/20 transition-[background-color,color,transform] duration-150 ease-out hover:bg-lilac hover:text-white active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40"
+        className="grid h-8 w-8 place-items-center rounded-full bg-cacau-soft text-xs font-semibold text-cacau ring-1 ring-cacau/20 transition-[background-color,color,transform] duration-150 ease-out hover:bg-cacau hover:text-white active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40"
       >
         {initials}
       </button>
@@ -76,7 +76,7 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
               <div className="truncate text-xs text-muted">{user?.email}</div>
               <div className="mt-2 flex items-center gap-2 text-xs text-muted">
                 <span className="truncate">{ws.name}</span>
-                {ws.plan && <Badge tone="lilac">Plano {PLAN_LABEL[ws.plan]}</Badge>}
+                {ws.plan && <Badge tone="cacau">Plano {PLAN_LABEL[ws.plan]}</Badge>}
               </div>
             </div>
             <div className="pt-1.5">

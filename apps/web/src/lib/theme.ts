@@ -1,6 +1,6 @@
 /**
  * Brand colors chosen in Configurações. The app's accent comes from two CSS variables,
- * --pink (main color: buttons, active menu, highlights) and --lilac (second color of
+ * --pink (main color: buttons, active menu, highlights) and --cacau (second color of
  * gradients and secondary highlights), each with a "-soft" tint for backgrounds.
  * A palette here rewrites those variables for light and dark mode.
  */
@@ -105,13 +105,13 @@ export function accentCss(choice: string | undefined): string {
   const sSoft = mix(s, WHITE, 0.88);
   const light = [
     `--pink: ${triplet(p)}`, `--pink-soft: ${triplet(pSoft)}`, `--pink-ink: ${triplet(readableOnTint(p, pSoft))}`, `--pink-deep: ${triplet(mix(p, BLACK, 0.3))}`,
-    `--lilac: ${triplet(s)}`, `--lilac-soft: ${triplet(sSoft)}`, `--lilac-ink: ${triplet(readableOnTint(s, sSoft))}`,
+    `--cacau: ${triplet(s)}`, `--cacau-soft: ${triplet(sSoft)}`, `--cacau-ink: ${triplet(readableOnTint(s, sSoft))}`,
   ];
   const dp = visibleOnDark(p);
   const ds = visibleOnDark(s);
   const dark = [
     `--pink: ${triplet(p)}`, `--pink-soft: ${triplet(mix(DARK_SURFACE, dp, 0.28))}`, `--pink-ink: ${triplet(dp)}`, `--pink-deep: ${triplet(mix(p, BLACK, 0.3))}`,
-    `--lilac: ${triplet(ds)}`, `--lilac-soft: ${triplet(mix(DARK_SURFACE, ds, 0.28))}`, `--lilac-ink: ${triplet(ds)}`,
+    `--cacau: ${triplet(ds)}`, `--cacau-soft: ${triplet(mix(DARK_SURFACE, ds, 0.28))}`, `--cacau-ink: ${triplet(ds)}`,
   ];
   // "html …" outranks the defaults in index.css (":root, [data-theme]"); the descendant form covers
   // areas that pin their own theme, like the store's always-light wrapper

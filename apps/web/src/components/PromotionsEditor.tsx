@@ -9,7 +9,7 @@ import type { Promotion } from '@cakeboss/domain/types';
 import { Badge, Button, Card, CardHeader, Field, IconButton, NumberInput, Segmented, TextInput, cx } from './ui';
 import { ConfirmDialog, Drawer, useToast } from './motion';
 
-const STATE_TONE: Record<PromotionState, 'green' | 'lilac' | 'gray' | 'amber'> = { ativa: 'green', agendada: 'lilac', encerrada: 'gray', pausada: 'amber' };
+const STATE_TONE: Record<PromotionState, 'green' | 'cacau' | 'gray' | 'amber'> = { ativa: 'green', agendada: 'cacau', encerrada: 'gray', pausada: 'amber' };
 
 const blank = (): Promotion => ({ id: uid(), name: '', kind: 'percent', value: 10, recipeIds: [], startsOn: null, endsOn: null, active: true, createdAt: nowIso() });
 

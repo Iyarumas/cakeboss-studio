@@ -131,7 +131,7 @@ export default function Assistant() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Assistente de Precificação</h1>
-            <Badge tone="lilac">Simulação</Badge>
+            <Badge tone="cacau">Simulação</Badge>
           </div>
           <p className="mt-1 text-sm text-muted">Monte o produto, veja cada custo e descubra o preço certo. Nada aqui altera seus cadastros sem confirmação.</p>
         </div>
@@ -516,7 +516,7 @@ function PricingPanel({
             title={linked ? 'Preço e margem se ajustam juntos. Clique para separar.' : 'Preço e margem independentes. Clique para ligar.'}
             className={cx(
               'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
-              linked ? 'border-lilac/30 bg-lilac-soft text-lilac' : 'border-line text-muted hover:text-ink',
+              linked ? 'border-cacau/30 bg-cacau-soft text-cacau' : 'border-line text-muted hover:text-ink',
             )}
           >
             {linked ? <Link2 size={12} /> : <Unlink2 size={12} />}
@@ -543,7 +543,7 @@ function PricingPanel({
         <SliderField label="Desperdício" value={params.wastePct} onChange={(v) => setParam({ wastePct: clamp(v, 0, 95) })} min={0} max={40} step={0.5} suffix="%" hint={`${number(r.lostUnits)} ${per} perdidas`} />
       </div>
 
-      <div className="border-b border-divider bg-gradient-to-br from-pink-soft/60 to-lilac-soft/40 px-4 py-4">
+      <div className="border-b border-divider bg-gradient-to-br from-pink-soft/60 to-cacau-soft/40 px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-1 text-xs font-medium text-pink">

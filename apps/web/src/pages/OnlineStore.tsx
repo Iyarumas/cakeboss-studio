@@ -284,7 +284,7 @@ export default function OnlineStorePage() {
                 </Link>
               </div>
               <div className="border-t border-divider px-5 py-3 text-xs text-muted">
-                Regras da loja: entrega só com <Badge tone="lilac">Pix</Badge> ou <Badge tone="lilac">cartão de crédito</Badge> pagos antes da produção; dinheiro só na retirada ou combinado pelo WhatsApp.
+                Regras da loja: entrega só com <Badge tone="cacau">Pix</Badge> ou <Badge tone="cacau">cartão de crédito</Badge> pagos antes da produção; dinheiro só na retirada ou combinado pelo WhatsApp.
               </div>
             </Card>
           </motion.div>

@@ -529,7 +529,7 @@ function MascotActor({
             }}
           >
             <div className="mb-1.5 flex items-center gap-2">
-              <span className={cx('h-2 w-2 rounded-full', tip.level === 'alerta' ? 'bg-loss' : tip.level === 'aviso' ? 'bg-warn' : 'bg-lilac')} />
+              <span className={cx('h-2 w-2 rounded-full', tip.level === 'alerta' ? 'bg-loss' : tip.level === 'aviso' ? 'bg-warn' : 'bg-cacau')} />
               <span className="text-xs font-semibold text-pink">{name}</span>
               <span className="text-[11px] text-muted">
                 {tip.level}
