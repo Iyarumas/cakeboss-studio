@@ -23,6 +23,14 @@ const AuthCtx = createContext<Auth | null>(null);
 
 const origin = () => window.location.origin;
 
+/** "Errou a senha muitas vezes" with the time the lock ends. */
+function lockedMessage(until: string) {
+  const end = new Date(until);
+  const sameDay = end.toDateString() === new Date().toDateString();
+  const when = new Intl.DateTimeFormat('pt-BR', sameDay ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(end);
+  return `Senha errada muitas vezes. Por segurança, o acesso desta conta está bloqueado neste aparelho até ${sameDay ? 'as ' : ''}${when}. Se esqueceu a senha, use "Esqueci minha senha".`;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +62,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       recovering,
       signIn: async (email, password) => {
+        // too many wrong passwords from this network: wait (3 → 30 min, 6 in a day → 24 h)
+        const status = await supabase.rpc('login_lock_status', { email: email.trim() });
+        if (status.data) return { ok: false, error: lockedMessage(status.data as string) };
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        return error ? { ok: false, error: authMessage(error) } : { ok: true };
+        if (!error) {
+          void supabase.rpc('login_succeeded');
+          return { ok: true };
+        }
+        if (error.code === 'invalid_credentials') {
+          const locked = await supabase.rpc('login_failed', { email: email.trim() });
+          if (locked.data) return { ok: false, error: lockedMessage(locked.data as string) };
+        }
+        return { ok: false, error: authMessage(error) };
       },
       signUp: async ({ name, email, password }) => {
         const { data, error } = await supabase.auth.signUp({

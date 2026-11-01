@@ -5,7 +5,8 @@ import { Boxes, Droplets, Factory, Flame, Plus, Trash, Users, Zap, Building2, Re
 import { parseBackup, useStore } from '../store/store';
 import { dateTime, money, moneyFine, number, qtyBase, uid } from '@cakeboss/domain/format';
 import { fixedMonthly, fixedPerHour, gasUnitLabel, gasUnitPrice, laborHourly, priceRecipe } from '@cakeboss/domain/pricing';
-import type { DB, EnergySource, Settings } from '@cakeboss/domain/types';
+import { orderTotals } from '@cakeboss/domain/orders';
+import type { DB, EnergySource, Order, Settings } from '@cakeboss/domain/types';
 import { Badge, Button, Card, CardHeader, EmptyState, Field, IconButton, NumberInput, PageHeader, Segmented, Select, TextInput, cx } from '../components/ui';
 import { ConfirmDialog, Drawer, stagger, useToast } from '../components/motion';
 import { PurchaseForm, type PurchasePreset } from '../components/PurchaseForm';
@@ -242,6 +243,100 @@ export function OperatingCostsPage() {
   );
 }
 
+type ProdFilter = 'todos' | 'pagos' | 'retirada';
+
+const isPickup = (o: Order) => (o.fulfillment ? o.fulfillment.type === 'retirada' : !(o.deliveryFee > 0));
+
+/**
+ * Orders waiting to be made, soonest first. Starting production moves the order to "Em produção",
+ * which records the production and takes the ingredients out of stock (once).
+ */
+function OrdersToProduce() {
+  const { db, ctx, setOrderStatus } = useStore();
+  const toast = useToast();
+  const [filter, setFilter] = useState<ProdFilter>('todos');
+  const rows = useMemo(
+    () =>
+      db.orders
+        .filter((o) => o.status === 'confirmado' || o.status === 'em_producao')
+        .map((o) => ({ o, t: orderTotals(o, db.transactions, db.recipes, ctx) }))
+        .sort((a, b) => a.o.deliveryAt.localeCompare(b.o.deliveryAt)),
+    [db.orders, db.transactions, db.recipes, ctx],
+  );
+  const shown = rows.filter(({ o, t }) => (filter === 'pagos' ? t.remaining <= 0.009 : filter === 'retirada' ? isPickup(o) : true));
+  if (!rows.length) return null;
+
+  return (
+    <motion.div variants={stagger.item} className="mb-5">
+      <Card>
+        <CardHeader
+          icon={<Factory size={16} />}
+          title="Pedidos para produzir"
+          subtitle="Ao iniciar a produção de um pedido, ela entra no histórico e os ingredientes saem do estoque."
+          actions={
+            <Segmented
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: 'todos', label: `Todos (${rows.length})` },
+                { value: 'pagos', label: 'Já pagos' },
+                { value: 'retirada', label: 'Retirada' },
+              ]}
+            />
+          }
+        />
+        {!shown.length ? (
+          <p className="p-5 text-sm text-muted">Nenhum pedido neste filtro.</p>
+        ) : (
+          <ul className="divide-y divide-divider">
+            {shown.map(({ o, t }) => {
+              const paid = t.remaining <= 0.009;
+              return (
+                <li key={o.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <b className="tabular">#{o.number}</b>
+                      <span className="truncate font-medium">{o.customerName || 'Sem cliente'}</span>
+                      <Badge tone={paid ? 'green' : t.paid > 0 ? 'amber' : 'red'}>{paid ? 'Pago' : t.paid > 0 ? `Sinal ${money(t.paid)} · falta ${money(t.remaining)}` : `A pagar ${money(t.remaining)}`}</Badge>
+                      <Badge tone={isPickup(o) ? 'lilac' : 'gray'}>{isPickup(o) ? 'Retirada no local' : 'Entrega'}</Badge>
+                      {o.status === 'em_producao' && <Badge tone="pink">Em produção</Badge>}
+                    </div>
+                    <div className="mt-1 text-sm text-muted">
+                      {isPickup(o) ? 'Retirada' : 'Entrega'} {dateTime(o.deliveryAt)} · {o.items.map((i) => `${number(i.qty)}× ${i.name}`).join(', ')}
+                    </div>
+                  </div>
+                  {o.status === 'confirmado' ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        setOrderStatus(o.id, 'em_producao');
+                        toast(`Produção do pedido #${o.number} registrada e estoque baixado`);
+                      }}
+                    >
+                      <Factory size={14} /> Iniciar produção
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setOrderStatus(o.id, 'pronto');
+                        toast(`Pedido #${o.number} pronto`);
+                      }}
+                    >
+                      Marcar como pronto
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </motion.div>
+  );
+}
+
 export function ProductionsPage() {
   const { db, ctx, registerProduction, deleteProduction } = useStore();
   const toast = useToast();
@@ -256,6 +351,7 @@ export function ProductionsPage() {
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show">
       <PageHeader title="Produções" subtitle="Registre o que foi produzido. O custo do momento fica guardado como histórico e o estoque pode ser baixado." />
+      <OrdersToProduce />
       <div className="grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
         <motion.div variants={stagger.item}>
           <Card>

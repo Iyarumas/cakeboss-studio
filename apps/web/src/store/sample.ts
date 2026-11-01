@@ -1,5 +1,6 @@
 import { nowIso, uid } from '@cakeboss/domain/format';
 import { costRecord, defaultParams, priceRecipe, type PricingContext } from '@cakeboss/domain/pricing';
+import { SALE_CATEGORY } from '@cakeboss/domain/orders';
 import type {
   CakeProduct,
   Customer,
@@ -364,9 +365,9 @@ export function buildSampleActivity(recipes: Recipe[], ingredients: Ingredient[]
   };
   const orders: Order[] = [
     order(carla, 'entregue', -6, (f) => [item(bolo, 1, 120, f, 'Bolo de chocolate 20 cm'), item(brigadeiro, 50, 3.5, f)], { notes: 'Aniversário da filha. Escrever "Parabéns, Lia".' }),
-    order(ana, 'pronto', 0, (f) => [item(brigadeiro, 100, 3.5, f), item(brownie, 12, 12, f)], { deliveryFee: 10, notes: 'Entregar até as 16h.' }),
-    order(juliana, 'em_producao', 1, (f) => [item(brownie, 24, 12, f)], { deliveryFee: 15, discount: 18 }),
-    order(marcos, 'confirmado', 3, (f) => [item(bolo, 1, 120, f, 'Bolo de chocolate 20 cm'), item(brigadeiro, 30, 3.5, f)]),
+    order(ana, 'pronto', 0, (f) => [item(brigadeiro, 100, 3.5, f), item(brownie, 12, 12, f)], { deliveryFee: 10, fulfillment: { type: 'entrega', fee: 10 }, notes: 'Entregar até as 16h.' }),
+    order(juliana, 'em_producao', 1, (f) => [item(brownie, 24, 12, f)], { deliveryFee: 15, discount: 18, fulfillment: { type: 'entrega', fee: 15 } }),
+    order(marcos, 'confirmado', 3, (f) => [item(bolo, 1, 120, f, 'Bolo de chocolate 20 cm'), item(brigadeiro, 30, 3.5, f)], { fulfillment: { type: 'retirada', fee: 0 } }),
     order(ana, 'orcamento', 10, (f) => [item(brigadeiro, 200, 3.2, f), item(brownie, 30, 11, f)], { notes: 'Orçamento para casamento, 120 convidados.' }),
   ];
   const [entregue, pronto, , confirmado] = orders;
@@ -384,14 +385,14 @@ export function buildSampleActivity(recipes: Recipe[], ingredients: Ingredient[]
   });
   const transactions: Transaction[] = [
     // the delivered order paid in full, the ready one half paid, the confirmed one with a deposit
-    tx(-9, 'entrada', 'Venda', `Sinal do pedido #${entregue.number}`, 145, 'pix', entregue.id),
-    tx(-6, 'entrada', 'Venda', `Restante do pedido #${entregue.number}`, 150, 'pix', entregue.id),
-    tx(-2, 'entrada', 'Venda', `Sinal do pedido #${pronto.number}`, 250, 'pix', pronto.id),
-    tx(-1, 'entrada', 'Venda', `Sinal do pedido #${confirmado.number}`, 110, 'credito', confirmado.id),
+    tx(-9, 'entrada', SALE_CATEGORY, `Sinal do pedido #${entregue.number}`, 145, 'pix', entregue.id),
+    tx(-6, 'entrada', SALE_CATEGORY, `Restante do pedido #${entregue.number}`, 150, 'pix', entregue.id),
+    tx(-2, 'entrada', SALE_CATEGORY, `Sinal do pedido #${pronto.number}`, 250, 'pix', pronto.id),
+    tx(-1, 'entrada', SALE_CATEGORY, `Sinal do pedido #${confirmado.number}`, 110, 'credito', confirmado.id),
     // earlier months, so the chart has history
-    tx(-75, 'entrada', 'Venda', 'Vendas da feirinha (exemplo)', 640, 'dinheiro'),
-    tx(-48, 'entrada', 'Venda', 'Encomendas da semana (exemplo)', 890, 'pix'),
-    tx(-20, 'entrada', 'Venda', 'Doces para festa (exemplo)', 1180, 'pix'),
+    tx(-75, 'entrada', SALE_CATEGORY, 'Vendas da feirinha (exemplo)', 640, 'dinheiro'),
+    tx(-48, 'entrada', SALE_CATEGORY, 'Encomendas da semana (exemplo)', 890, 'pix'),
+    tx(-20, 'entrada', SALE_CATEGORY, 'Doces para festa (exemplo)', 1180, 'pix'),
     tx(-70, 'saida', 'Ingredientes', 'Mercado do mês (exemplo)', 420, 'debito'),
     tx(-45, 'saida', 'Ingredientes', 'Mercado do mês (exemplo)', 515, 'debito'),
     tx(-40, 'saida', 'Gás', 'Botijão P13 (exemplo)', 115, 'pix'),
