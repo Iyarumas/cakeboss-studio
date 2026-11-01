@@ -3,7 +3,8 @@ import { nowIso, toBase, uid } from '@cakeboss/domain/format';
 import { computePricing, costRecord, defaultParams, type PricingContext } from '@cakeboss/domain/pricing';
 import type { Purchase, Unit, Customer, DB, HistoryEntry, Ingredient, Material, Order, OrderStatus, PaymentMethod, Production, Recipe, Settings, Simulation, Transaction } from '@cakeboss/domain/types';
 import { FEE_CATEGORY, METHOD_LABEL, SALE_CATEGORY, STATUS, consumesStock, freezeCosts, isFirm } from '@cakeboss/domain/orders';
-import { buildSample } from './sample';
+import { SAMPLE_STORE_TEXT, buildSample, buildSampleActivity, isSampleId } from './sample';
+import { storeSettings } from '@cakeboss/domain/shop';
 import { defaultTemplates } from '@cakeboss/domain/whatsapp';
 
 const KEY = 'docegestao:db';
@@ -510,27 +511,67 @@ export function StoreProvider({ children, initial, persist }: { children: ReactN
             if (!settings[k]) settings[k] = s.settingsPatch[k];
           if (!settings.fixedCosts.length) settings.fixedCosts = s.settingsPatch.fixedCosts;
           settings.equipment = [...settings.equipment.filter((e) => !e.id.startsWith('eq-sample-')), ...s.settingsPatch.equipment];
+          const ingredients = [...d.ingredients, ...s.ingredients];
+          const materials = [...d.materials, ...s.materials];
+          // a whole working month on top of the example fichas: customers, orders, money, store
+          const a = buildSampleActivity(s.recipes, s.ingredients, { ingredients, materials, settings }, settings, Math.max(0, ...d.orders.map((o) => o.number)) + 1);
+          const st = storeSettings(settings);
+          settings.store = {
+            ...st,
+            whatsapp: st.whatsapp || SAMPLE_STORE_TEXT.whatsapp,
+            pickupAddress: st.pickupAddress || SAMPLE_STORE_TEXT.pickupAddress,
+            about: st.about || SAMPLE_STORE_TEXT.about,
+            tagline: st.tagline || SAMPLE_STORE_TEXT.tagline,
+            zones: [...st.zones.filter((z) => !isSampleId(z.id)), ...a.zones],
+            cakes: [...(st.cakes ?? []).filter((c) => !isSampleId(c.id)), a.cake],
+            promotions: [...(st.promotions ?? []).filter((x) => !isSampleId(x.id)), a.promotion],
+          };
           return withLog(
             {
               ...d,
-              ingredients: [...d.ingredients, ...s.ingredients],
-              materials: [...d.materials, ...s.materials],
+              ingredients,
+              materials,
               recipes: [...d.recipes, ...s.recipes],
+              customers: [...d.customers, ...a.customers],
+              orders: [...d.orders, ...a.orders],
+              transactions: [...d.transactions, ...a.transactions],
+              purchases: [...d.purchases, ...a.purchases],
+              productions: [...d.productions, ...a.productions],
+              simulations: [...d.simulations, ...a.simulations],
               settings,
             },
-            entry('sistema', 'Dados de exemplo carregados'),
+            entry('sistema', 'Dados de exemplo carregados', 'Fichas, insumos, clientes, pedidos, financeiro, compras, produções, bolo montado e loja.'),
           );
         }),
       clearSample: () =>
         mutate((d) => {
           const sampleEq = new Set(['eq-sample-forno', 'eq-sample-fogao', 'eq-sample-batedeira']);
+          const st = storeSettings(d.settings);
+          // store texts go back to empty only if the person did not change them
+          const keep = <K extends keyof typeof SAMPLE_STORE_TEXT>(k: K) => (st[k] === SAMPLE_STORE_TEXT[k] ? '' : st[k]);
+          const store = {
+            ...st,
+            whatsapp: keep('whatsapp'),
+            pickupAddress: keep('pickupAddress'),
+            about: keep('about'),
+            tagline: keep('tagline') || undefined,
+            zones: st.zones.filter((z) => !isSampleId(z.id)),
+            cakes: (st.cakes ?? []).filter((c) => !isSampleId(c.id)),
+            promotions: (st.promotions ?? []).filter((x) => !isSampleId(x.id)),
+          };
           return withLog(
             {
               ...d,
               ingredients: d.ingredients.filter((x) => !x.sample),
               materials: d.materials.filter((x) => !x.sample),
               recipes: d.recipes.filter((x) => !x.sample),
-              settings: { ...d.settings, equipment: d.settings.equipment.filter((e) => !sampleEq.has(e.id)) },
+              customers: d.customers.filter((x) => !isSampleId(x.id)),
+              orders: d.orders.filter((x) => !isSampleId(x.id)),
+              transactions: d.transactions.filter((x) => !isSampleId(x.id)),
+              purchases: d.purchases.filter((x) => !isSampleId(x.id)),
+              productions: d.productions.filter((x) => !isSampleId(x.id)),
+              simulations: d.simulations.filter((x) => !isSampleId(x.id)),
+              settings: { ...d.settings, equipment: d.settings.equipment.filter((e) => !sampleEq.has(e.id)), store },
             },
             entry('sistema', 'Dados de exemplo removidos', 'Custos operacionais preenchidos pelo exemplo foram mantidos; revise-os em Custos operacionais.'),
           );

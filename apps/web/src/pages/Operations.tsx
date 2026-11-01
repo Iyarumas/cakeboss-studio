@@ -567,12 +567,12 @@ export function SettingsPage() {
           </motion.div>
           <motion.div variants={stagger.item}>
             <Card>
-              <CardHeader title="Dados" subtitle="Os dados ficam salvos neste navegador. Faça backups com frequência." />
+              <CardHeader title="Dados" subtitle="Os dados ficam salvos na sua conta. Você também pode baixar uma cópia de segurança." />
               <div className="divide-y divide-divider">
                 <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-sm font-medium">Dados de exemplo</div>
-                    <div className="text-xs text-muted">Produtos e insumos fictícios para conhecer o sistema, marcados como “exemplo”.</div>
+                    <div className="text-xs text-muted">Um mês de confeitaria fictício para conhecer o sistema: fichas, insumos, clientes, pedidos, financeiro, compras, produções, bolo montado e loja. Tudo marcado como “exemplo” e removido de uma vez.</div>
                   </div>
                   {hasSample ? (
                     <Button variant="danger" onClick={() => setRemoveSample(true)}>
@@ -661,7 +661,7 @@ export function SettingsPage() {
           toast('Dados de exemplo removidos');
         }}
       >
-        Saem os ingredientes, materiais e fichas marcados como “exemplo”. Seus próprios cadastros continuam. Se alguma ficha sua usa um ingrediente de exemplo, cadastre-o antes, senão a ficha ficará sem ele.
+        Sai tudo o que é exemplo: fichas, insumos, clientes, pedidos, lançamentos, compras, produções, o bolo montado, as cidades e a promoção. Seus próprios cadastros continuam. Se alguma ficha sua usa um ingrediente de exemplo, cadastre-o antes, senão a ficha ficará sem ele.
       </ConfirmDialog>
     </motion.div>
   );
