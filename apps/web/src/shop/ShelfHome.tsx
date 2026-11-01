@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Heart, MessageCircle, Plus, Search, ShoppingBag } from 'lucide-react';
+import { Cake, Heart, MessageCircle, Plus, Search, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store/store';
 import { money } from '@cakeboss/domain/format';
 import { hasOptions, startingPrice, storeSettings } from '@cakeboss/domain/shop';
@@ -78,11 +78,11 @@ function MenuCard({ item }: { item: Item }) {
     return (
       <article className="menu-card">
         <button type="button" onClick={() => openCake(c.id)} className="menu-card__photo" aria-label={`Montar ${c.name}`}>
-          {c.image ? <img src={c.image} alt={c.name} loading="lazy" /> : <span className="grid h-full place-items-center px-4 font-display text-2xl font-bold">{c.name}</span>}
+          {c.image ? <img src={c.image} alt={c.name} loading="lazy" /> : <NoPhoto />}
         </button>
-        <h3 className="mt-3 font-display text-xl font-bold leading-tight">{c.name}</h3>
-        <p className="mt-1 text-sm text-muted">Você escolhe tamanho, massa e recheios</p>
-        <div className="mt-auto pt-4">
+        <h3 className="mt-3 font-display text-base font-bold leading-tight sm:text-lg">{c.name}</h3>
+        <p className="mt-1 hidden text-sm text-muted sm:block">Você escolhe tamanho, massa e recheios</p>
+        <div className="mt-auto pt-3">
           <button type="button" onClick={() => openCake(c.id)} className="price-pill">
             {from !== null ? `a partir de ${money(from)}` : 'Montar'}
           </button>
@@ -99,12 +99,12 @@ function MenuCard({ item }: { item: Item }) {
   return (
     <article className="menu-card">
       <button type="button" onClick={() => openProduct(r.id)} className="menu-card__photo" aria-label={`Ver ${name}`}>
-        {r.storeImage ? <img src={r.storeImage} alt={name} loading="lazy" /> : <span className="grid h-full place-items-center px-4 font-display text-2xl font-bold">{name}</span>}
+        {r.storeImage ? <img src={r.storeImage} alt={name} loading="lazy" /> : <NoPhoto />}
         {promo && <span className="absolute left-2 top-2 rounded-full bg-pink px-2.5 py-1 text-xs font-bold text-white">{promotionLabel(promo)}</span>}
       </button>
-      <h3 className="mt-3 font-display text-xl font-bold leading-tight">{name}</h3>
-      {r.storeDescription && <p className="mt-1 line-clamp-2 text-sm text-muted">{r.storeDescription}</p>}
-      <div className="mt-auto flex items-center justify-center gap-3 pt-4">
+      <h3 className="mt-3 font-display text-base font-bold leading-tight sm:text-lg">{name}</h3>
+      {r.storeDescription && <p className="mt-1 hidden text-sm text-muted sm:line-clamp-2">{r.storeDescription}</p>}
+      <div className="mt-auto flex flex-wrap items-center justify-center gap-2 pt-3">
         <span className="price-pill">
           {options && <small className="font-medium">a partir de</small>}
           {promo && <s className="font-medium opacity-80">{money(base)}</s>}
@@ -118,12 +118,21 @@ function MenuCard({ item }: { item: Item }) {
             toast(`${name} no carrinho`);
           }}
           aria-label={options ? `Escolher opções de ${name}` : `Adicionar ${name} ao carrinho`}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-white transition-transform duration-150 ease-out active:scale-95"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-white transition-transform duration-150 ease-out active:scale-95"
         >
           <Plus size={18} />
         </button>
       </div>
     </article>
+  );
+}
+
+/** Product without a photo yet: a soft cake mark instead of repeating the name under it. */
+function NoPhoto() {
+  return (
+    <span className="grid h-full place-items-center bg-[rgb(var(--pink)/0.08)] text-[rgb(var(--pink)/0.55)]">
+      <Cake size={34} strokeWidth={1.5} aria-hidden="true" />
+    </span>
   );
 }
 
