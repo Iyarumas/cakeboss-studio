@@ -170,6 +170,9 @@ export function MascotSvg({
         </motion.g>
 
         <motion.g animate={step ? { y: [0, -2.5, 0] } : { y: 0 }} transition={step ? { duration: 0.21, repeat: Infinity } : { duration: 0.2 }}>
+          {/* body first: arms and the sign are drawn after it so they stay in front when raised */}
+          {ch.body}
+          <Face y={ch.face.y} light={ch.face.light} mood={mood} reduce={reduce} />
           {(celebrating || dancing) && !(celebrating && sign) ? (
             <>
               {/* both arms up: cheering / dancing */}
@@ -223,9 +226,6 @@ export function MascotSvg({
               {arm(`M${lx} ${ly} Q${lx - 7} ${ly + 4} ${lx - 8} ${ly + 10}`)}
             </>
           )}
-
-          {ch.body}
-          <Face y={ch.face.y} light={ch.face.light} mood={mood} reduce={reduce} />
         </motion.g>
       </motion.g>
     </svg>
