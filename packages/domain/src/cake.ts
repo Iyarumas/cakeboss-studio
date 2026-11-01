@@ -1,5 +1,5 @@
-import { priceRecipe, type PricingContext } from './pricing';
-import type { CakeComponent, CakeProduct, CakeSelection, Recipe, Settings } from './types';
+import { ingredientPricePerBase, priceRecipe, type PricingContext } from './pricing';
+import type { CakeComponent, CakeExtra, CakeProduct, CakeSelection, CakeSize, Recipe, Settings } from './types';
 
 /**
  * Built cakes ("bolo montado").
@@ -9,8 +9,14 @@ import type { CakeComponent, CakeProduct, CakeSelection, Recipe, Settings } from
  * cobertura for the whole cake. With N fillings the cake has N + 1 massa layers and N filling layers.
  *
  *   cost = (N+1)·size.massa·massa + Σ size.recheio·recheio_i + size.cobertura·cobertura + size.extra
+ *          + Σ adicionais·size.recheio + Σ decorações·size.cobertura
+ * Add-ins and decorations are registered for the reference size and grow with the size like fillings and
+ * cobertura do (when the size has none of those, by its area).
  *   price = cost ÷ (1 − sale fees − margin), rounded up to R$ 0,50
  */
+
+/** Category of the fichas that exist only to build cakes (massas, recheios, coberturas, adicionais, decoração). */
+export const CAKE_CATEGORY = 'Bolo montado';
 
 /** Suggestion only: area of a diameter relative to the reference size. */
 export const areaFactor = (diameter: number, refDiameter: number) => (refDiameter > 0 ? Math.round(((diameter / refDiameter) ** 2) * 100) / 100 : 1);
@@ -30,6 +36,8 @@ export interface CakeQuote {
   parts: { label: string; cost: number }[];
   /** fichas and batches used, to take them out of stock */
   components: { recipeId: string; batches: number }[];
+  /** stock items used straight (decorations, add-ins), in base units */
+  stockItems: { ingredientId: string; qty: number }[];
   /** something can't be priced (deleted ficha, missing choice) */
   problems: string[];
   label: string;
@@ -37,10 +45,24 @@ export interface CakeQuote {
 
 const find = (list: CakeComponent[], id?: string) => list.find((c) => c.id === id);
 
+/** How much of an add-in or decoration a size takes, relative to the reference size. */
+const extraFactor = (size: CakeSize, cake: CakeProduct, kind: 'adicional' | 'decoracao') =>
+  (kind === 'adicional' ? size.recheio : size.cobertura) || (size.diameter > 0 ? areaFactor(size.diameter, cake.refDiameter) : 1);
+
+/** Cost of an add-in or decoration at the reference size (null = can't be priced). */
+export function extraCost(e: CakeExtra, recipes: Recipe[], ctx: PricingContext): number | null {
+  if (e.source === 'ficha') return e.recipeId ? layerCost(e.recipeId, recipes, ctx) : null;
+  const ing = ctx.ingredients.find((i) => i.id === e.ingredientId);
+  return ing && (e.qty ?? 0) > 0 ? ingredientPricePerBase(ing) * (e.qty ?? 0) : null;
+}
+
 export function cakeQuote(cake: CakeProduct, sel: CakeSelection, recipes: Recipe[], ctx: PricingContext, settings: Settings): CakeQuote {
   const problems: string[] = [];
   const parts: CakeQuote['parts'] = [];
   const components: CakeQuote['components'] = [];
+  const stockItems: CakeQuote['stockItems'] = [];
+  const adicionais = (sel.adicionalIds ?? []).map((id) => (cake.adicionais ?? []).find((x) => x.id === id)).filter((x): x is CakeExtra => !!x);
+  const decoracoes = (sel.decoracaoIds ?? []).map((id) => (cake.decoracoes ?? []).find((x) => x.id === id)).filter((x): x is CakeExtra => !!x);
   const size = cake.sizes.find((s) => s.id === sel.sizeId);
   const massa = find(cake.massas, sel.massaId);
   const recheios = sel.recheioIds.map((id) => find(cake.recheios, id)).filter((c): c is CakeComponent => !!c);
@@ -63,6 +85,19 @@ export function cakeQuote(cake: CakeProduct, sel: CakeSelection, recipes: Recipe
     add(massa, layers * size.massa, `Massa ${massa.name}: ${layers} camada${layers > 1 ? 's' : ''}`);
     for (const r of recheios) add(r, size.recheio, `Recheio ${r.name}`);
     if (cobertura) add(cobertura, size.cobertura, `Cobertura ${cobertura.name}`);
+    const addExtra = (e: CakeExtra, kind: 'adicional' | 'decoracao', label: string) => {
+      const f = extraFactor(size, cake, kind);
+      const unit = extraCost(e, recipes, ctx);
+      if (unit === null) {
+        problems.push(`"${e.name}" está sem ficha técnica ou sem item do estoque`);
+        return;
+      }
+      parts.push({ label, cost: unit * f });
+      if (e.source === 'ficha' && e.recipeId) components.push({ recipeId: e.recipeId, batches: f });
+      if (e.source === 'estoque' && e.ingredientId) stockItems.push({ ingredientId: e.ingredientId, qty: (e.qty ?? 0) * f });
+    };
+    for (const e of adicionais) addExtra(e, 'adicional', `Adicional ${e.name}`);
+    for (const e of decoracoes) addExtra(e, 'decoracao', `Decoração ${e.name}`);
     if (size.extra) parts.push({ label: `Extras do tamanho ${size.name}`, cost: size.extra });
   }
 
@@ -73,10 +108,17 @@ export function cakeQuote(cake: CakeProduct, sel: CakeSelection, recipes: Recipe
   const price = Number.isFinite(raw) && cost > 0 ? Math.ceil(raw * 2 - 1e-9) / 2 : 0;
   if (v + m >= 1) problems.push('Margem + taxas somam 100% ou mais');
 
-  const label = [size?.name, massa && `Massa: ${massa.name}`, recheios.length && `Recheio${recheios.length > 1 ? 's' : ''}: ${recheios.map((r) => r.name).join(', ')}`, cobertura && `Cobertura: ${cobertura.name}`]
+  const label = [
+    size?.name,
+    massa && `Massa: ${massa.name}`,
+    recheios.length && `Recheio${recheios.length > 1 ? 's' : ''}: ${recheios.map((r) => r.name).join(', ')}`,
+    adicionais.length && `Adicionais: ${adicionais.map((x) => x.name).join(', ')}`,
+    cobertura && `Cobertura: ${cobertura.name}`,
+    decoracoes.length && `Decoração: ${decoracoes.map((x) => x.name).join(', ')}`,
+  ]
     .filter(Boolean)
     .join(' · ');
-  return { cost, price, parts, components: components.filter((c) => c.batches > 0), problems, label };
+  return { cost, price, parts, components: components.filter((c) => c.batches > 0), stockItems: stockItems.filter((x) => x.qty > 0), problems, label };
 }
 
 /** Cheapest possible cake (smallest-cost size, massa and filling) for "a partir de". */

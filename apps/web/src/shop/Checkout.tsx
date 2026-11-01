@@ -88,6 +88,7 @@ export default function Checkout() {
         // birthday cakes: cost comes from the quote of the chosen parts
         unitCost: l.cost ?? null,
         components: l.components,
+        stockItems: l.stockItems,
       })),
       deliveryAt: fromLocalDateTime(`${day}T${hour}`),
       status: 'orcamento',

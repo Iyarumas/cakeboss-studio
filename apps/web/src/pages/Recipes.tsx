@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Calculator, ClipboardList, Copy, Plus, Save, Trash, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useStore } from '../store/store';
 import { emptyComposition, priceRecipe } from '@cakeboss/domain/pricing';
+import { CAKE_CATEGORY, layerCost } from '@cakeboss/domain/cake';
 import { date, money, nowIso, pct, uid } from '@cakeboss/domain/format';
 import type { Recipe } from '@cakeboss/domain/types';
 import { Badge, Button, Card, CardHeader, EmptyState, Field, NumberInput, PageHeader, Segmented, TextInput, cx } from '../components/ui';
@@ -18,7 +19,11 @@ export function RecipesPage() {
   const tab = params.get('aba') === 'bolos' ? 'bolos' : 'fichas';
   const navigate = useNavigate();
   const toast = useToast();
-  const rows = useMemo(() => db.recipes.map((r) => ({ r, p: priceRecipe(r, ctx) })).sort((a, b) => a.r.name.localeCompare(b.r.name)), [db.recipes, ctx]);
+  // fichas that only exist to build cakes live in the Bolos de aniversário tab
+  const rows = useMemo(
+    () => db.recipes.filter((r) => r.category !== CAKE_CATEGORY).map((r) => ({ r, p: priceRecipe(r, ctx) })).sort((a, b) => a.r.name.localeCompare(b.r.name)),
+    [db.recipes, ctx],
+  );
 
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show">
@@ -42,7 +47,10 @@ export function RecipesPage() {
         />
       </motion.div>
       {tab === 'bolos' ? (
-        <CakesManager />
+        <>
+          <CakesManager />
+          <CakeFichas />
+        </>
       ) : rows.length === 0 ? (
         <Card>
           <EmptyState
@@ -139,6 +147,33 @@ const blankRecipe = (margin: number): Recipe => ({
   createdAt: nowIso(),
   updatedAt: nowIso(),
 });
+
+/** The fichas used only by birthday cakes (massas, recheios, coberturas, adicionais, decoração). */
+function CakeFichas() {
+  const { db, ctx } = useStore();
+  const fichas = db.recipes.filter((r) => r.category === CAKE_CATEGORY).sort((a, b) => a.name.localeCompare(b.name));
+  if (!fichas.length) return null;
+  return (
+    <motion.div variants={stagger.item} className="mt-5">
+      <Card>
+        <CardHeader title="Fichas dos bolos" subtitle="Massas, recheios, coberturas, adicionais e decoração. Ficam só aqui e não aparecem como produtos na loja." />
+        <ul className="divide-y divide-divider">
+          {fichas.map((r) => {
+            const cost = layerCost(r.id, db.recipes, ctx);
+            return (
+              <li key={r.id}>
+                <Link to={`/fichas/${r.id}`} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-subtle/60">
+                  <span className="min-w-0 flex-1 truncate font-medium">{r.name}</span>
+                  {!r.ingredients.length ? <Badge tone="amber">sem ingredientes</Badge> : <span className="tabular text-muted">{cost !== null ? `${money(cost)} por receita` : '—'}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+    </motion.div>
+  );
+}
 
 export function RecipeEditorPage() {
   const { id } = useParams();

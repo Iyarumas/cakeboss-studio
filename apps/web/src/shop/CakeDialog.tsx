@@ -201,7 +201,7 @@ export function CakeDialog({ cake, onClose }: { cake: CakeProduct | null; onClos
               {cake.recheios.length > 0 && (
                 <fieldset>
                   <legend className="mb-2 text-sm font-semibold">
-                    3. Recheios <span className="font-normal text-muted">— até {cake.maxRecheios} ({sel.recheioIds.length + 1} camadas de massa)</span>
+                    3. Recheios <span className="font-normal text-muted">— até {cake.maxRecheios} ({sel.recheioIds.length + 1} {sel.recheioIds.length ? 'camadas' : 'camada'} de massa)</span>
                   </legend>
                   <div role="group" aria-label="Recheios" className="flex flex-wrap gap-2">
                     {cake.recheios.map((r) => {
@@ -229,9 +229,24 @@ export function CakeDialog({ cake, onClose }: { cake: CakeProduct | null; onClos
                 </fieldset>
               )}
 
+              {(cake.adicionais ?? []).length > 0 && (
+                <fieldset>
+                  <legend className="mb-2 text-sm font-semibold">
+                    4. Adicionais nos recheios <span className="font-normal text-muted">— opcional, escolha quantos quiser</span>
+                  </legend>
+                  <div role="group" aria-label="Adicionais" className="flex flex-wrap gap-2">
+                    {(cake.adicionais ?? []).map((x) => (
+                      <Chip key={x.id} on={(sel.adicionalIds ?? []).includes(x.id)} onClick={() => setSel({ ...sel, adicionalIds: (sel.adicionalIds ?? []).includes(x.id) ? (sel.adicionalIds ?? []).filter((id) => id !== x.id) : [...(sel.adicionalIds ?? []), x.id] })}>
+                        <span className="font-medium">{x.name}</span>
+                      </Chip>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
               {cake.coberturas.length > 0 && (
                 <fieldset>
-                  <legend className="mb-2 text-sm font-semibold">4. Cobertura</legend>
+                  <legend className="mb-2 text-sm font-semibold">5. Cobertura</legend>
                   <div role="radiogroup" aria-label="Cobertura" className="flex flex-wrap gap-2">
                     <Chip on={!sel.coberturaId} onClick={() => setSel({ ...sel, coberturaId: undefined })}>
                       <span className="font-medium">Sem cobertura</span>
@@ -240,6 +255,21 @@ export function CakeDialog({ cake, onClose }: { cake: CakeProduct | null; onClos
                       <Chip key={c.id} on={sel.coberturaId === c.id} onClick={() => setSel({ ...sel, coberturaId: c.id })}>
                         <span className="h-3 w-3 rounded-full border border-black/10" style={{ background: colorOf(c.name, '#FFE4EF') }} />
                         <span className="font-medium">{c.name}</span>
+                      </Chip>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
+              {(cake.decoracoes ?? []).length > 0 && (
+                <fieldset>
+                  <legend className="mb-2 text-sm font-semibold">
+                    6. Decoração <span className="font-normal text-muted">— opcional, escolha quantos quiser</span>
+                  </legend>
+                  <div role="group" aria-label="Decoração" className="flex flex-wrap gap-2">
+                    {(cake.decoracoes ?? []).map((x) => (
+                      <Chip key={x.id} on={(sel.decoracaoIds ?? []).includes(x.id)} onClick={() => setSel({ ...sel, decoracaoIds: (sel.decoracaoIds ?? []).includes(x.id) ? (sel.decoracaoIds ?? []).filter((id) => id !== x.id) : [...(sel.decoracaoIds ?? []), x.id] })}>
+                        <span className="font-medium">{x.name}</span>
                       </Chip>
                     ))}
                   </div>

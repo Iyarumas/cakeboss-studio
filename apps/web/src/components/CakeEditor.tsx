@@ -1,11 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Camera, ExternalLink, Plus, Sparkles, Trash, TriangleAlert } from 'lucide-react';
 import { useStore } from '../store/store';
-import { money, nowIso, number, uid } from '@cakeboss/domain/format';
+import { baseUnit, money, nowIso, number, uid } from '@cakeboss/domain/format';
 import { emptyComposition } from '@cakeboss/domain/pricing';
-import { areaFactor, cakeQuote, layerCost } from '@cakeboss/domain/cake';
+import { CAKE_CATEGORY, areaFactor, cakeQuote, extraCost, layerCost } from '@cakeboss/domain/cake';
 import { shrinkImage } from '../lib/image';
-import type { CakeComponent, CakeProduct, CakeSize, Recipe } from '@cakeboss/domain/types';
+import type { CakeComponent, CakeExtra, CakeProduct, CakeSize, Recipe } from '@cakeboss/domain/types';
 import { Button, Field, IconButton, NumberInput, Select, TextInput, cx } from './ui';
 import { useToast } from './motion';
 
@@ -21,7 +21,39 @@ export const newCake = (): CakeProduct => ({
   coberturas: [],
   maxRecheios: 2,
   marginPct: 40,
+  adicionais: [],
+  decoracoes: [],
 });
+
+/** Fichas offered for a cake part: only the cake's own fichas, plus whatever is already linked. */
+function useCakeFichas(selected: string | undefined) {
+  const { db } = useStore();
+  return db.recipes.filter((x) => x.category === CAKE_CATEGORY || x.id === selected);
+}
+
+/** Creates an empty ficha that lives in Bolos de aniversário (not in the product list). */
+function useCreateCakeFicha() {
+  const { db, saveRecipe } = useStore();
+  const toast = useToast();
+  return (name: string) => {
+    const r: Recipe = {
+      ...emptyComposition(),
+      unitLabel: 'receita',
+      id: uid(),
+      name,
+      category: CAKE_CATEGORY,
+      salePrice: null,
+      targetMarginPct: db.settings.defaultMarginPct,
+      priceSnapshot: null,
+      storeVisible: false,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    };
+    saveRecipe(r);
+    toast(`Ficha "${name}" criada — abra e coloque os ingredientes`);
+    return r.id;
+  };
+}
 
 function Step({ n, title, hint, children }: { n: number; title: string; hint?: ReactNode; children: ReactNode }) {
   return (
@@ -38,16 +70,10 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: R
 
 /** Massas, recheios or coberturas: each one linked to a ficha técnica of ONE receita. */
 function Components({ kind, list, onChange }: { kind: 'Massa' | 'Recheio' | 'Cobertura'; list: CakeComponent[]; onChange: (l: CakeComponent[]) => void }) {
-  const { db, ctx, saveRecipe } = useStore();
-  const toast = useToast();
+  const { db, ctx } = useStore();
   const set = (id: string, p: Partial<CakeComponent>) => onChange(list.map((c) => (c.id === id ? { ...c, ...p } : c)));
-  const createFicha = (c: CakeComponent) => {
-    const name = `${kind} ${c.name || 'nova'} (1 receita)`;
-    const r: Recipe = { ...emptyComposition(), unitLabel: 'receita', id: uid(), name, category: 'Bolo montado', salePrice: null, targetMarginPct: db.settings.defaultMarginPct, priceSnapshot: null, storeVisible: false, createdAt: nowIso(), updatedAt: nowIso() };
-    saveRecipe(r);
-    set(c.id, { recipeId: r.id });
-    toast(`Ficha "${name}" criada — abra e coloque os ingredientes`);
-  };
+  const create = useCreateCakeFicha();
+  const createFicha = (c: CakeComponent) => set(c.id, { recipeId: create(`${kind} ${c.name || 'nova'} (1 receita)`) });
 
   return (
     <div className="space-y-2">
@@ -56,51 +82,198 @@ function Components({ kind, list, onChange }: { kind: 'Massa' | 'Recheio' | 'Cob
         const cost = c.recipeId ? layerCost(c.recipeId, db.recipes, ctx) : null;
         const empty = r && !r.ingredients.length;
         return (
-          <div key={c.id} className="rounded-xl border border-line p-3">
-            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
-              <TextInput aria-label={`Nome do ${kind.toLowerCase()}`} value={c.name} onChange={(e) => set(c.id, { name: e.target.value })} placeholder={kind === 'Massa' ? 'Ex.: Chocolate' : kind === 'Recheio' ? 'Ex.: Ninho' : 'Ex.: Chantininho'} />
-              <IconButton label="Remover" className="sm:order-last" onClick={() => onChange(list.filter((x) => x.id !== c.id))}>
+          <ComponentRow
+            key={c.id}
+            c={c}
+            kind={kind}
+            r={r}
+            cost={cost}
+            empty={!!empty}
+            onSet={(p) => set(c.id, p)}
+            onRemove={() => onChange(list.filter((x) => x.id !== c.id))}
+            onCreate={() => createFicha(c)}
+          />
+        );
+      })}
+      <button type="button" onClick={() => onChange([...list, { id: uid(), name: '', recipeId: '' }])} className="inline-flex items-center gap-1 text-sm font-medium text-pink hover:underline">
+        <Plus size={14} /> Adicionar {kind.toLowerCase()}
+      </button>
+    </div>
+  );
+}
+
+/** One massa, recheio or cobertura with its ficha técnica (only the cake's own fichas are offered). */
+function ComponentRow({
+  c,
+  kind,
+  r,
+  cost,
+  empty,
+  onSet,
+  onRemove,
+  onCreate,
+}: {
+  c: CakeComponent;
+  kind: string;
+  r?: Recipe;
+  cost: number | null;
+  empty: boolean;
+  onSet: (p: Partial<CakeComponent>) => void;
+  onRemove: () => void;
+  onCreate: () => void;
+}) {
+  const fichas = useCakeFichas(c.recipeId);
+  const set = (_id: string, p: Partial<CakeComponent>) => onSet(p);
+  return (
+    <div className="rounded-xl border border-line p-3">
+      <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
+        <TextInput
+          aria-label={`Nome do ${kind.toLowerCase()}`}
+          value={c.name}
+          onChange={(e) => set(c.id, { name: e.target.value })}
+          placeholder={kind === 'Massa' ? 'Ex.: Chocolate' : kind === 'Recheio' ? 'Ex.: Ninho' : 'Ex.: Chantininho'}
+        />
+        <IconButton label="Remover" className="sm:order-last" onClick={onRemove}>
+          <Trash size={14} />
+        </IconButton>
+        <div className="col-span-2 flex gap-2 sm:col-span-1">
+          <Select aria-label="Ficha técnica" value={c.recipeId} onChange={(e) => set(c.id, { recipeId: e.target.value })} className="flex-1">
+            <option value="">Escolha a ficha técnica…</option>
+            {fichas.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.name}
+              </option>
+            ))}
+          </Select>
+          {!c.recipeId && (
+            <Button size="sm" className="h-10 shrink-0" onClick={onCreate}>
+              <Plus size={14} /> Criar ficha
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        {!c.recipeId ? (
+          <span className="text-warn">Escolha ou crie a ficha técnica com os ingredientes de 1 receita.</span>
+        ) : empty ? (
+          <span className="flex items-center gap-1 text-warn">
+            <TriangleAlert size={12} /> A ficha ainda não tem ingredientes — custo R$ 0,00.
+          </span>
+        ) : (
+          <span className="text-muted">
+            Custo de 1 receita: <b className="text-ink">{cost !== null ? money(cost) : '—'}</b>
+          </span>
+        )}
+        {r && (
+          <a href={`/fichas/${r.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-pink hover:underline">
+            {empty ? 'Colocar ingredientes' : 'Abrir ficha'} <ExternalLink size={11} />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Add-ins (inside the fillings) or decorations (on top). Each one is either a ficha técnica or one item
+ * straight from stock (morangos, KitKat, chocolate picado) with how much goes in a cake of the reference size.
+ */
+function Extras({ kind, list, refDiameter, onChange }: { kind: 'adicional' | 'decoracao'; list: CakeExtra[]; refDiameter: number; onChange: (l: CakeExtra[]) => void }) {
+  const { db, ctx } = useStore();
+  const create = useCreateCakeFicha();
+  const set = (id: string, p: Partial<CakeExtra>) => onChange(list.map((e) => (e.id === id ? { ...e, ...p } : e)));
+  const label = kind === 'adicional' ? 'adicional' : 'decoração';
+  const fichas = db.recipes.filter((x) => x.category === CAKE_CATEGORY || list.some((e) => e.recipeId === x.id));
+  return (
+    <div className="space-y-2">
+      {list.map((e) => {
+        const ing = db.ingredients.find((i) => i.id === e.ingredientId);
+        const cost = extraCost(e, db.recipes, ctx);
+        return (
+          <div key={e.id} className="rounded-xl border border-line p-3">
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_auto_auto]">
+              <TextInput
+                aria-label={`Nome do ${label}`}
+                value={e.name}
+                onChange={(ev) => set(e.id, { name: ev.target.value })}
+                placeholder={kind === 'adicional' ? 'Ex.: Chocolate picado, Bombom, KitKat' : 'Ex.: Morangos, Raspas de chocolate'}
+              />
+              <IconButton label="Remover" className="sm:order-last" onClick={() => onChange(list.filter((x) => x.id !== e.id))}>
                 <Trash size={14} />
               </IconButton>
-              <div className="col-span-2 flex gap-2 sm:col-span-1">
-                <Select aria-label="Ficha técnica" value={c.recipeId} onChange={(e) => set(c.id, { recipeId: e.target.value })} className="flex-1">
-                  <option value="">Escolha a ficha técnica…</option>
-                  {db.recipes.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </Select>
-                {!c.recipeId && (
-                  <Button size="sm" className="h-10 shrink-0" onClick={() => createFicha(c)}>
-                    <Plus size={14} /> Criar ficha
-                  </Button>
-                )}
+              <div className="col-span-2 inline-flex rounded-lg border border-line p-0.5 text-xs sm:col-span-1" role="radiogroup" aria-label="De onde vem">
+                {(['estoque', 'ficha'] as const).map((src) => (
+                  <button
+                    key={src}
+                    type="button"
+                    role="radio"
+                    aria-checked={e.source === src}
+                    onClick={() => set(e.id, { source: src })}
+                    className={cx('h-9 flex-1 rounded-md px-3 font-medium transition-colors', e.source === src ? 'bg-pink-soft text-pink' : 'text-muted hover:text-ink')}
+                  >
+                    {src === 'estoque' ? 'Item do estoque' : 'Ficha técnica'}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {!c.recipeId ? (
-                <span className="text-warn">Escolha ou crie a ficha técnica com os ingredientes de 1 receita.</span>
-              ) : empty ? (
-                <span className="flex items-center gap-1 text-warn">
-                  <TriangleAlert size={12} /> A ficha ainda não tem ingredientes — custo R$ 0,00.
-                </span>
+            <div className="mt-2">
+              {e.source === 'estoque' ? (
+                <div className="grid gap-2 sm:grid-cols-[1.4fr_1fr]">
+                  <Select aria-label="Ingrediente do estoque" value={e.ingredientId ?? ''} onChange={(ev) => set(e.id, { ingredientId: ev.target.value })}>
+                    <option value="">Escolha o item do estoque…</option>
+                    {db.ingredients.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <NumberInput aria-label={`Quantidade num bolo de ${refDiameter} cm`} value={e.qty ?? 0} min={0} suffix={ing ? baseUnit(ing.unit) : ''} onChange={(v) => set(e.id, { qty: v })} />
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Select aria-label="Ficha técnica" value={e.recipeId ?? ''} onChange={(ev) => set(e.id, { recipeId: ev.target.value })} className="flex-1">
+                    <option value="">Escolha a ficha técnica…</option>
+                    {fichas.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {!e.recipeId && (
+                    <Button
+                      size="sm"
+                      className="h-10 shrink-0"
+                      onClick={() =>
+                        set(e.id, {
+                          recipeId: create(`${kind === 'adicional' ? 'Adicional' : 'Decoração'} ${e.name || 'nova'} (1 receita)`),
+                        })
+                      }
+                    >
+                      <Plus size={14} /> Criar ficha
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="mt-1.5 text-xs">
+              {cost === null ? (
+                <span className="text-warn">{e.source === 'estoque' ? `Escolha o item e quanto vai num bolo de ${refDiameter} cm.` : 'Escolha ou crie a ficha técnica.'}</span>
               ) : (
                 <span className="text-muted">
-                  Custo de 1 receita: <b className="text-ink">{cost !== null ? money(cost) : '—'}</b>
+                  Custo num bolo de {refDiameter} cm: <b className="text-ink">{money(cost)}</b>
+                  {e.source === 'estoque' && ' · sai do estoque quando o pedido entra em produção'}
                 </span>
-              )}
-              {r && (
-                <a href={`/fichas/${r.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-pink hover:underline">
-                  {empty ? 'Colocar ingredientes' : 'Abrir ficha'} <ExternalLink size={11} />
-                </a>
               )}
             </div>
           </div>
         );
       })}
-      <button type="button" onClick={() => onChange([...list, { id: uid(), name: '', recipeId: '' }])} className="inline-flex items-center gap-1 text-sm font-medium text-pink hover:underline">
-        <Plus size={14} /> Adicionar {kind.toLowerCase()}
+      <button
+        type="button"
+        onClick={() => onChange([...list, { id: uid(), name: '', source: 'estoque', qty: 0 }])}
+        className="inline-flex items-center gap-1 text-sm font-medium text-pink hover:underline"
+      >
+        <Plus size={14} /> Adicionar {label}
       </button>
     </div>
   );
@@ -128,7 +301,21 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
       counts,
       rows: c.sizes.map((s) => ({
         s,
-        cells: counts.map((n) => (massa ? cakeQuote(c, { sizeId: s.id, massaId: massa.id, recheioIds: recheios.slice(0, n).map((r) => r.id) }, db.recipes, ctx, db.settings) : null)),
+        cells: counts.map((n) =>
+          massa
+            ? cakeQuote(
+                c,
+                {
+                  sizeId: s.id,
+                  massaId: massa.id,
+                  recheioIds: recheios.slice(0, n).map((r) => r.id),
+                },
+                db.recipes,
+                ctx,
+                db.settings,
+              )
+            : null,
+        ),
       })),
     };
   }, [c, db.recipes, ctx, db.settings]);
@@ -140,7 +327,16 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
     if (c.sizes.some((s) => !s.name.trim() || !(s.massa > 0))) return setError('Cada tamanho precisa de nome e de quantas receitas de massa leva por camada.');
     if (!c.massas.some((m) => m.recipeId && m.name.trim())) return setError('Cadastre pelo menos uma massa com ficha técnica.');
     const clean = (l: CakeComponent[]) => l.filter((x) => x.name.trim() && x.recipeId).map((x) => ({ ...x, name: x.name.trim() }));
-    onSave({ ...c, name: c.name.trim(), massas: clean(c.massas), recheios: clean(c.recheios), coberturas: clean(c.coberturas) });
+    const extras = (l: CakeExtra[] = []) => l.filter((x) => x.name.trim() && (x.source === 'ficha' ? !!x.recipeId : !!x.ingredientId && (x.qty ?? 0) > 0)).map((x) => ({ ...x, name: x.name.trim() }));
+    onSave({
+      ...c,
+      name: c.name.trim(),
+      massas: clean(c.massas),
+      recheios: clean(c.recheios),
+      coberturas: clean(c.coberturas),
+      adicionais: extras(c.adicionais),
+      decoracoes: extras(c.decoracoes),
+    });
   };
 
   return (
@@ -150,7 +346,10 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
           <Field label="Nome na loja">
             <TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} />
           </Field>
-          <label className="relative grid h-[68px] w-[68px] cursor-pointer place-items-center self-end overflow-hidden rounded-xl border border-dashed border-line bg-subtle text-muted hover:border-pink/50 hover:text-pink" title="Foto">
+          <label
+            className="relative grid h-[68px] w-[68px] cursor-pointer place-items-center self-end overflow-hidden rounded-xl border border-dashed border-line bg-subtle text-muted hover:border-pink/50 hover:text-pink"
+            title="Foto"
+          >
             {c.image ? <img src={c.image} alt="" className="h-full w-full object-cover" /> : <Camera size={20} />}
             <input
               type="file"
@@ -190,7 +389,11 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
 
       <Step n={3} title="Recheios" hint="Uma ficha técnica por recheio, com os ingredientes de 1 receita (1 camada).">
         <Components kind="Recheio" list={c.recheios} onChange={(recheios) => set({ recheios })} />
-        <Field label="Quantos recheios o cliente pode escolher" className="mt-3 max-w-xs" hint={`${c.maxRecheios} ${c.maxRecheios === 1 ? 'recheio' : 'recheios'} = ${c.maxRecheios + 1} camadas de massa + ${c.maxRecheios} de recheio.`}>
+        <Field
+          label="Quantos recheios o cliente pode escolher"
+          className="mt-3 max-w-xs"
+          hint={`${c.maxRecheios} ${c.maxRecheios === 1 ? 'recheio' : 'recheios'} = ${c.maxRecheios + 1} camadas de massa + ${c.maxRecheios} de recheio.`}
+        >
           <Select value={String(c.maxRecheios)} onChange={(e) => set({ maxRecheios: Number(e.target.value) })}>
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>
@@ -201,15 +404,23 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
         </Field>
       </Step>
 
-      <Step n={4} title="Coberturas (opcional)" hint="Ficha técnica com 1 receita de cobertura.">
+      <Step
+        n={4}
+        title="Adicionais nos recheios (opcional)"
+        hint={`Chocolate picado, bombom, KitKat… O cliente escolhe quantos quiser. Informe quanto vai num bolo de ${c.refDiameter} cm; nos outros tamanhos cresce junto com o recheio.`}
+      >
+        <Extras kind="adicional" list={c.adicionais ?? []} refDiameter={c.refDiameter} onChange={(adicionais) => set({ adicionais })} />
+      </Step>
+
+      <Step n={5} title="Coberturas (opcional)" hint="Ficha técnica com 1 receita de cobertura.">
         <Components kind="Cobertura" list={c.coberturas} onChange={(coberturas) => set({ coberturas })} />
       </Step>
 
-      <Step
-        n={5}
-        title="Tamanhos"
-        hint="Para cada tamanho, quantas receitas você usa: de massa por camada, de recheio por camada e de cobertura no bolo todo. Extras = caixa, disco, topo…"
-      >
+      <Step n={6} title="Decoração (opcional)" hint={`Morangos, raspas de chocolate, confeitos… Informe quanto vai num bolo de ${c.refDiameter} cm; nos outros tamanhos cresce junto com a cobertura.`}>
+        <Extras kind="decoracao" list={c.decoracoes ?? []} refDiameter={c.refDiameter} onChange={(decoracoes) => set({ decoracoes })} />
+      </Step>
+
+      <Step n={7} title="Tamanhos" hint="Para cada tamanho, quantas receitas você usa: de massa por camada, de recheio por camada e de cobertura no bolo todo. Extras = caixa, disco, topo…">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] text-sm">
             <thead className="text-left text-[11px] text-muted">
@@ -251,14 +462,44 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
           </table>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => set({ sizes: [...c.sizes, { id: uid(), name: '', diameter: 0, massa: 1, recheio: 1, cobertura: 1, extra: 0 }] })}>
+          <Button
+            size="sm"
+            onClick={() =>
+              set({
+                sizes: [
+                  ...c.sizes,
+                  {
+                    id: uid(),
+                    name: '',
+                    diameter: 0,
+                    massa: 1,
+                    recheio: 1,
+                    cobertura: 1,
+                    extra: 0,
+                  },
+                ],
+              })
+            }
+          >
             <Plus size={14} /> Adicionar tamanho
           </Button>
           {!c.sizes.length && (
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => set({ sizes: [10, 15, 20, 25, 35].map((d) => ({ id: uid(), name: `${d} cm`, diameter: d, massa: 0, recheio: 0, cobertura: 0, extra: 0 })) })}
+              onClick={() =>
+                set({
+                  sizes: [10, 15, 20, 25, 35].map((d) => ({
+                    id: uid(),
+                    name: `${d} cm`,
+                    diameter: d,
+                    massa: 0,
+                    recheio: 0,
+                    cobertura: 0,
+                    extra: 0,
+                  })),
+                })
+              }
             >
               Criar 10, 15, 20, 25 e 35 cm
             </Button>
@@ -272,7 +513,20 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
             <button
               type="button"
               className="font-semibold text-pink hover:underline"
-              onClick={() => set({ sizes: c.sizes.map((s) => (s.diameter > 0 ? { ...s, massa: areaFactor(s.diameter, c.refDiameter), recheio: areaFactor(s.diameter, c.refDiameter), cobertura: areaFactor(s.diameter, c.refDiameter) } : s)) })}
+              onClick={() =>
+                set({
+                  sizes: c.sizes.map((s) =>
+                    s.diameter > 0
+                      ? {
+                          ...s,
+                          massa: areaFactor(s.diameter, c.refDiameter),
+                          recheio: areaFactor(s.diameter, c.refDiameter),
+                          cobertura: areaFactor(s.diameter, c.refDiameter),
+                        }
+                      : s,
+                  ),
+                })
+              }
             >
               sugerir pelo tamanho
             </button>
@@ -281,7 +535,7 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
         )}
       </Step>
 
-      <Step n={6} title="Prévia dos preços na loja" hint={`Com a massa e os recheios mais baratos, sem cobertura, margem de ${number(c.marginPct)}% e as taxas de venda de Custos operacionais.`}>
+      <Step n={8} title="Prévia dos preços na loja" hint={`Com a massa e os recheios mais baratos, sem cobertura, margem de ${number(c.marginPct)}% e as taxas de venda de Custos operacionais.`}>
         {!table.rows.length || !c.massas.some((m) => m.recipeId) ? (
           <p className="text-sm text-muted">Cadastre tamanhos e pelo menos uma massa para ver os preços.</p>
         ) : (

@@ -69,7 +69,7 @@ export function CakeQuoteModal({ open, onClose, onAdd }: { open: boolean; onClos
               variant="primary"
               disabled={!ok || !(unit > 0)}
               onClick={() => {
-                onAdd({ id: uid(), recipeId: null, name: `${cake.name} (${q!.label})`, qty, unitPrice: Math.round(unit * 100) / 100, unitCost: Math.round(q!.cost * 10000) / 10000, components: q!.components });
+                onAdd({ id: uid(), recipeId: null, name: `${cake.name} (${q!.label})`, qty, unitPrice: Math.round(unit * 100) / 100, unitCost: Math.round(q!.cost * 10000) / 10000, components: q!.components, stockItems: q!.stockItems });
                 onClose();
               }}
             >
@@ -140,6 +140,23 @@ export function CakeQuoteModal({ open, onClose, onAdd }: { open: boolean; onClos
               </div>
             </div>
           )}
+          {(cake.adicionais ?? []).length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[13px] font-semibold">
+                Adicionais nos recheios <span className="font-normal text-muted">opcional</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(cake.adicionais ?? []).map((x) => {
+                  const on = (sel.adicionalIds ?? []).includes(x.id);
+                  return (
+                    <Pick key={x.id} on={on} onClick={() => (setSel({ ...sel, adicionalIds: on ? (sel.adicionalIds ?? []).filter((id) => id !== x.id) : [...(sel.adicionalIds ?? []), x.id] }), setPrice(null))}>
+                      {x.name}
+                    </Pick>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {cake.coberturas.length > 0 && (
             <div>
               <div className="mb-1.5 text-[13px] font-semibold">Cobertura</div>
@@ -152,6 +169,24 @@ export function CakeQuoteModal({ open, onClose, onAdd }: { open: boolean; onClos
                     {c.name}
                   </Pick>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {(cake.decoracoes ?? []).length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[13px] font-semibold">
+                Decoração <span className="font-normal text-muted">opcional</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(cake.decoracoes ?? []).map((x) => {
+                  const on = (sel.decoracaoIds ?? []).includes(x.id);
+                  return (
+                    <Pick key={x.id} on={on} onClick={() => (setSel({ ...sel, decoracaoIds: on ? (sel.decoracaoIds ?? []).filter((id) => id !== x.id) : [...(sel.decoracaoIds ?? []), x.id] }), setPrice(null))}>
+                      {x.name}
+                    </Pick>
+                  );
+                })}
               </div>
             </div>
           )}

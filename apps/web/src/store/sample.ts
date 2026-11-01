@@ -423,6 +423,7 @@ export function buildSampleActivity(recipes: Recipe[], ingredients: Ingredient[]
     };
   };
   const lc = ingredients.find((i) => i.name.startsWith('Leite condensado'))!;
+  const granulado = ingredients.find((i) => i.name.startsWith('Granulado'))!;
   const choco = ingredients.find((i) => i.name.startsWith('Chocolate em pó'))!;
   const buys = [purchase(-12, lc, 6), purchase(-12, choco, 1)];
   transactions.push(...buys.map((b) => b.t));
@@ -482,6 +483,9 @@ export function buildSampleActivity(recipes: Recipe[], ingredients: Ingredient[]
     coberturas: [{ id: exId(), name: 'Ganache', recipeId: ganache.id }],
     maxRecheios: 2,
     marginPct: 40,
+    // straight from stock: no ficha needed for a single item
+    adicionais: [{ id: exId(), name: 'Granulado crocante', source: 'estoque', ingredientId: granulado.id, qty: 60 }],
+    decoracoes: [{ id: exId(), name: 'Confeitos de chocolate por cima', source: 'estoque', ingredientId: granulado.id, qty: 40 }],
   };
 
   const zones: DeliveryZone[] = [

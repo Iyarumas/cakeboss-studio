@@ -260,6 +260,7 @@ export interface ShopLine {
   /** birthday cakes: cost and fichas known from the quote */
   cost?: number;
   components?: { recipeId: string; batches: number }[];
+  stockItems?: { ingredientId: string; qty: number }[];
 }
 
 export function useCartLines(): ShopLine[] {
@@ -274,7 +275,7 @@ export function useCartLines(): ShopLine[] {
             if (!k) return null;
             const q = cakeQuote(k, l.cake, db.recipes, ctx, db.settings);
             if (q.problems.length) return null;
-            return { key: l.key, qty: l.qty, p: { id: k.id, name: k.name, unitLabel: 'bolo', storeImage: k.image }, unit: q.price, label: q.label, recipeId: null, cost: q.cost, components: q.components };
+            return { key: l.key, qty: l.qty, p: { id: k.id, name: k.name, unitLabel: 'bolo', storeImage: k.image }, unit: q.price, label: q.label, recipeId: null, cost: q.cost, components: q.components, stockItems: q.stockItems };
           }
           const p = products.find((x) => x.id === l.recipeId);
           if (!p) return null;

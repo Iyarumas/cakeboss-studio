@@ -56,8 +56,16 @@ const customerFrom = (r: Row): Customer => ({
 });
 const itemFrom = (r: Row): OrderItem => ({
   id: r.id as string, recipeId: (r.recipe_id as string) ?? (r.cake_product_id as string) ?? null, name: r.name as string, qty: num(r.qty), unitPrice: num(r.unit_price),
-  unitCost: numOrNull(r.unit_cost), components: (r.components as OrderItem['components']) ?? undefined,
+  unitCost: numOrNull(r.unit_cost), ...splitParts(r.components),
 });
+type Part = { recipeId: string; batches: number } | { ingredientId: string; qty: number };
+// built cakes: fichas (recipeId) and stock items (ingredientId) share the order_items.components column
+const splitParts = (v: unknown): Pick<OrderItem, 'components' | 'stockItems'> => {
+  const all = Array.isArray(v) ? (v as Part[]) : [];
+  const components = all.filter((x): x is { recipeId: string; batches: number } => 'recipeId' in x);
+  const stockItems = all.filter((x): x is { ingredientId: string; qty: number } => 'ingredientId' in x);
+  return { components: components.length ? components : undefined, stockItems: stockItems.length ? stockItems : undefined };
+};
 const orderFrom = (r: Row, items: OrderItem[]): Order => ({
   id: r.id as string, number: num(r.number), customerId: (r.customer_id as string) ?? null, customerName: (r.customer_name as string) ?? '', items,
   deliveryAt: r.delivery_at as string, status: FROM_DB[r.production_status as string] ?? 'confirmado', discount: num(r.discount), deliveryFee: num(r.delivery_fee),
@@ -117,7 +125,8 @@ const orderInsert = (ws: string, o: Order) => ({ workspace_id: ws, id: o.id, num
 const itemRows = (ws: string, o: Order, cakeIds: Set<string>) =>
   o.items.map((i) => ({
     workspace_id: ws, order_id: o.id, id: i.id, recipe_id: i.recipeId && !cakeIds.has(i.recipeId) ? i.recipeId : null, cake_product_id: i.recipeId && cakeIds.has(i.recipeId) ? i.recipeId : null,
-    name: i.name, qty: i.qty, unit_price: i.unitPrice, unit_cost: i.unitCost, components: i.components ?? null,
+    name: i.name, qty: i.qty, unit_price: i.unitPrice, unit_cost: i.unitCost,
+    components: i.components?.length || i.stockItems?.length ? [...(i.components ?? []), ...(i.stockItems ?? [])] : null,
   }));
 const txRow = (ws: string, t: Transaction) => ({ workspace_id: ws, id: t.id, date: t.date, type: t.type, category: t.category, description: t.description, amount: Math.abs(t.amount), method: t.method, order_id: t.orderId, source: 'manual', created_at: t.createdAt });
 const purchaseRow = (ws: string, p: Purchase) => ({ workspace_id: ws, id: p.id, date: p.date, kind: p.kind, item_id: p.itemId, item_name: p.itemName, packages: p.packages, package_qty: p.packageQty, unit: p.unit, price_per_package: p.pricePerPackage, total: p.total, supplier: p.supplier, stock_added: p.stockAdded, transaction_id: p.transactionId });

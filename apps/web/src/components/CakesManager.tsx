@@ -37,7 +37,7 @@ export function CakesManager() {
           <EmptyState
             icon={<Cake size={22} />}
             title="Nenhum bolo de aniversário ainda"
-            text="O cadastro é guiado em 6 passos: nome, massas, recheios, coberturas, tamanhos e a prévia dos preços."
+            text="O cadastro é guiado em 8 passos: nome, massas, recheios, adicionais, coberturas, decoração, tamanhos e a prévia dos preços."
             action={
               <Button variant="primary" onClick={() => setEdit(newCake())}>
                 <Plus size={16} /> Cadastrar bolo

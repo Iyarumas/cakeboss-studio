@@ -22,6 +22,29 @@ const cake: CakeProduct = {
   coberturas: [{ id: 'c1', name: 'Chantininho', recipeId: 'cob' }],
 };
 
+describe('adicionais e decoração', () => {
+  const withExtras: CakeProduct = {
+    ...cake,
+    adicionais: [{ id: 'a1', name: 'Chocolate picado', source: 'estoque', ingredientId: 'i-cob', qty: 2 }],
+    decoracoes: [{ id: 'd1', name: 'Morangos', source: 'ficha', recipeId: 'ninho' }],
+  };
+  it('somam ao custo e crescem com o tamanho', () => {
+    const base = cakeQuote(withExtras, { sizeId: 's30', massaId: 'm', recheioIds: ['r1'] }, recipes, ctx, settings);
+    const q = cakeQuote(withExtras, { sizeId: 's30', massaId: 'm', recheioIds: ['r1'], adicionalIds: ['a1'], decoracaoIds: ['d1'] }, recipes, ctx, settings);
+    // add-in: 2 un × R$ 6 × 1,5 (recheio do 30 cm) = 18 · decoration: R$ 8 × 2,5 (cobertura do 30 cm) = 20
+    expect(q.cost - base.cost).toBeCloseTo(38, 6);
+    expect(q.stockItems).toEqual([{ ingredientId: 'i-cob', qty: 3 }]);
+    expect(q.components).toContainEqual({ recipeId: 'ninho', batches: 2.5 });
+    expect(q.label).toContain('Adicionais: Chocolate picado');
+    expect(q.label).toContain('Decoração: Morangos');
+  });
+  it('item do estoque sem quantidade não é cobrado de graça', () => {
+    const bad: CakeProduct = { ...cake, adicionais: [{ id: 'a1', name: 'KitKat', source: 'estoque', ingredientId: 'i-cob', qty: 0 }] };
+    const q = cakeQuote(bad, { sizeId: 's20', massaId: 'm', recheioIds: ['r1'], adicionalIds: ['a1'] }, recipes, ctx, settings);
+    expect(q.problems.length).toBeGreaterThan(0);
+  });
+});
+
 describe('bolo montado', () => {
   it('sugestão pela área: 30 cm ≈ 2,25× o de 20 cm', () => {
     expect(areaFactor(30, 20)).toBe(2.25);

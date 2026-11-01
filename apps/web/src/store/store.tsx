@@ -177,6 +177,11 @@ function produceOrder(d: DB, order: Order, ctx: PricingContext): DB {
       const cr = d.recipes.find((x) => x.id === c.recipeId);
       if (cr && c.batches > 0 && it.qty > 0) next = produce(next, cr, c.batches * it.qty * Math.max(1, cr.yield), ctx, true, `${cr.name} · ${it.name.split(' (')[0]} · pedido #${order.number}`).d;
     }
+    // add-ins and decorations taken straight from stock (morangos, KitKat…)
+    for (const s of it.stockItems ?? []) {
+      if (!(s.qty > 0) || !(it.qty > 0)) continue;
+      next = { ...next, ingredients: next.ingredients.map((i) => (i.id === s.ingredientId ? { ...i, stock: i.stock - s.qty * it.qty } : i)) };
+    }
   }
   return next;
 }

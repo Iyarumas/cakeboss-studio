@@ -311,6 +311,21 @@ export interface CakeSize {
   extra: number;
 }
 
+/**
+ * Something extra on a built cake: an add-in for the fillings (chocolate picado, bombom, KitKat…) or a
+ * decoration (morangos, raspas…). It comes from a ficha técnica, or straight from one stock item.
+ */
+export interface CakeExtra {
+  id: string;
+  name: string;
+  source: 'ficha' | 'estoque';
+  /** source = ficha: one receita at the reference size */
+  recipeId?: string;
+  /** source = estoque: the ingredient and how much goes in a cake of the reference size, in its base unit (g, ml, un) */
+  ingredientId?: string;
+  qty?: number;
+}
+
 export interface CakeProduct {
   id: string;
   name: string;
@@ -325,6 +340,10 @@ export interface CakeProduct {
   coberturas: CakeComponent[];
   maxRecheios: number;
   marginPct: number;
+  /** add-ins mixed into the fillings, the customer picks any */
+  adicionais?: CakeExtra[];
+  /** decorations on top, the customer picks any */
+  decoracoes?: CakeExtra[];
 }
 
 export interface CakeSelection {
@@ -332,6 +351,8 @@ export interface CakeSelection {
   massaId: string;
   recheioIds: string[];
   coberturaId?: string;
+  adicionalIds?: string[];
+  decoracaoIds?: string[];
 }
 
 export type OrderStatus = 'orcamento' | 'confirmado' | 'em_producao' | 'pronto' | 'entregue' | 'cancelado';
@@ -347,6 +368,8 @@ export interface OrderItem {
   unitCost: number | null;
   /** built cakes: fichas used and how many batches of each, to take them out of stock */
   components?: { recipeId: string; batches: number }[];
+  /** built cakes: stock items used straight (morangos, KitKat…), in the ingredient's base unit per cake */
+  stockItems?: { ingredientId: string; qty: number }[];
 }
 
 export interface Order {
