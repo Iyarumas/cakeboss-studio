@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Lock, ArrowUpRight, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
+import { Lock, ArrowUpRight, Boxes, LayoutDashboard, Menu, Moon, Plus, Search, ShoppingBag, Sparkles, Store, Sun, Wallet, X } from 'lucide-react';
 import { useStore } from '../store/store';
 import { Button, IconButton, cx } from '../components/ui';
 import { useToast } from '../components/motion';
@@ -148,6 +148,48 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
   );
 }
 
+/** Phone: the daily screens one thumb away, with "Novo pedido" in the middle, like an installed app. */
+function BottomNav({ onMenu }: { onMenu: () => void }) {
+  const navigate = useNavigate();
+  const item = (active: boolean) => cx('flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors', active ? 'text-pink' : 'text-muted');
+  const tabs = [
+    { to: '/', label: 'Início', icon: <LayoutDashboard size={20} /> },
+    { to: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} /> },
+  ];
+  const tabs2 = [
+    { to: '/financeiro', label: 'Dinheiro', icon: <Wallet size={20} /> },
+    { to: '/estoque', label: 'Estoque', icon: <Boxes size={20} /> },
+  ];
+  const link = (t: { to: string; label: string; icon: ReactNode }) => (
+    <NavLink key={t.to} to={t.to} end={t.to === '/'} className={({ isActive }) => item(isActive)}>
+      {t.icon}
+      <span className="truncate">{t.label}</span>
+    </NavLink>
+  );
+  return (
+    <nav aria-label="Atalhos" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="mx-auto flex h-16 max-w-md items-stretch px-1">
+        {tabs.map(link)}
+        <div className="flex flex-1 items-center justify-center">
+          <button
+            type="button"
+            onClick={() => navigate('/pedidos?novo=1')}
+            aria-label="Novo pedido"
+            className="grid h-12 w-12 place-items-center rounded-full bg-pink text-white shadow-pop transition-transform duration-150 ease-out active:scale-95"
+          >
+            <Plus size={22} />
+          </button>
+        </div>
+        {tabs2.map(link)}
+        <button type="button" onClick={onMenu} className={item(false)}>
+          <Menu size={20} />
+          <span>Mais</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 /** Warns once when an item drops to (or below) its minimum stock, wherever the drop came from. */
 function StockWatcher() {
   const { db } = useStore();
@@ -205,6 +247,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
+      <BottomNav onMenu={() => setOpen(true)} />
       <main className="lg:pl-[264px]">
         <TopBar onMenu={() => setOpen(true)} />
         {(hasSample || persistError) && (
@@ -218,7 +261,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </div>
         )}
-        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+        <div className="mx-auto max-w-[1440px] px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
       </main>
     </div>
     </CommandPaletteProvider>

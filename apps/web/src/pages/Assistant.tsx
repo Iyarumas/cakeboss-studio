@@ -232,7 +232,7 @@ export default function Assistant() {
       </div>
 
       {/* resumo fixo no celular */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur lg:bottom-0 xl:hidden">
         <button type="button" onClick={() => summaryRef.current?.scrollIntoView({ behavior: 'smooth' })} className="grid w-full grid-cols-3 gap-2 text-left">
           <MiniStat label={`Custo/${per}`} value={<AnimatedCounter value={result.unitCost} format={money} />} />
           <MiniStat label="Preço" value={<AnimatedCounter value={result.effectivePrice} format={money} />} />
