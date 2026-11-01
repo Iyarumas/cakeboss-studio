@@ -134,7 +134,7 @@ export default function FinancePage() {
             label: 'Lucro dos entregues',
             value: deliveredProfit,
             icon: <PiggyBank size={16} />,
-            tone: 'bg-cacau-soft text-cacau',
+            tone: 'bg-lilac-soft text-lilac',
             foot: deliveredRevenue > 0 ? `${delivered.length} pedidos · margem ${pct((deliveredProfit / deliveredRevenue) * 100)}` : `${delivered.length} pedidos`,
           },
         ].map((k) => (

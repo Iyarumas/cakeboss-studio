@@ -187,7 +187,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.05 }}
                 className={cx(
                   'grid h-6 w-6 place-items-center rounded-full',
-                  t.tone === 'success' ? 'bg-profit-soft text-profit' : t.tone === 'error' ? 'bg-loss-soft text-loss' : 'bg-cacau-soft text-cacau',
+                  t.tone === 'success' ? 'bg-profit-soft text-profit' : t.tone === 'error' ? 'bg-loss-soft text-loss' : 'bg-lilac-soft text-lilac',
                 )}
               >
                 {t.tone === 'success' ? <Check size={14} /> : t.tone === 'error' ? <TriangleAlert size={14} /> : <Info size={14} />}

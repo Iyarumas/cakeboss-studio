@@ -72,7 +72,7 @@ export function Onboarding() {
       {step !== 'fim' && (
         <motion.div
           key="onb"
-          className="fixed inset-0 z-[90] grid place-items-center overflow-hidden bg-gradient-to-br from-pink-soft via-bg to-cacau-soft px-4"
+          className="fixed inset-0 z-[90] grid place-items-center overflow-hidden bg-gradient-to-br from-pink-soft via-bg to-lilac-soft px-4"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.03 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}

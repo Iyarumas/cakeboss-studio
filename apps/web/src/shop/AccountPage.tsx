@@ -12,9 +12,9 @@ import { useToast } from '../components/motion';
 import { AddressFields } from './AuthDialog';
 import { Section, useShop } from './ShopApp';
 
-const CUSTOMER_STATUS: Record<OrderStatus, { label: string; tone: 'gray' | 'cacau' | 'pink' | 'amber' | 'green' | 'red' }> = {
+const CUSTOMER_STATUS: Record<OrderStatus, { label: string; tone: 'gray' | 'lilac' | 'pink' | 'amber' | 'green' | 'red' }> = {
   orcamento: { label: 'Aguardando confirmação', tone: 'amber' },
-  confirmado: { label: 'Confirmado', tone: 'cacau' },
+  confirmado: { label: 'Confirmado', tone: 'lilac' },
   em_producao: { label: 'Em produção', tone: 'pink' },
   pronto: { label: 'Pronto', tone: 'green' },
   entregue: { label: 'Entregue', tone: 'green' },

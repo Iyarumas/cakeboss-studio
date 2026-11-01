@@ -33,7 +33,7 @@ Valores em `src/index.css` (formato `R G B`, para o Tailwind aplicar transparên
 | `pink` (preenchimento) | `#DB2777` | `#D6337F` | Botão principal, seleção, série principal dos gráficos |
 | `pink-ink` (texto) | `#BE185D` | `#F0609F` | Rosa usado como texto — `text-pink` aponta para cá automaticamente |
 | `pink-deep` | `#9D174D` | `#9D174D` | Fim do degradê do botão "Ver loja dos clientes" (exceção pedida pelo proprietário) |
-| `cacau` | `#8A5A3C` | `#D2A07E` | Segunda cor da marca |
+| `lilac` → **cacau** | `#8A5A3C` | `#D2A07E` | Segunda cor da marca (nome antigo mantido até a Fase 5) |
 | `profit` / `loss` / `warn` | `#1E7B4F` / `#C4242A` / `#92400E` | `#4ADE9A` / `#F87171` / `#F5B544` | Significado, nunca decoração |
 
 Contrastes medidos: texto 17,5:1 · secundário 5,9:1 · branco sobre rosa 4,6:1 · rosa-texto sobre o próprio tom claro ≥ 4,5:1 · escuro: texto 15,6:1, rosa-texto 5,9:1, branco sobre rosa 4,5:1.
@@ -52,10 +52,10 @@ Contrastes medidos: texto 17,5:1 · secundário 5,9:1 · branco sobre rosa 4,6:1
 
 ## 4. Forma e profundidade
 
-- **Painel em "folha emoldurada":** o menu e a barra do topo dividem a mesma moldura tingida, sem linha entre eles; o trabalho fica numa folha branca com borda de 1px e cantos de 16px (`rounded-sheet`). Menu com 248px; item ativo vira uma pastilha branca com o ícone em rosa.
+- **Painel em "folha emoldurada":** o menu e a barra do topo dividem a mesma moldura tingida, sem linha entre eles; o trabalho fica numa folha branca com borda de 1px e cantos de 16px (`rounded-sheet`). A estrutura da casca é implementada na Fase 5.
 - Raios: cartão 10px (`rounded-card`), controles 8px (`rounded-control`), folha 16px. Botões: um único formato em todo o produto.
 - **Sem sombra no que está parado** (`shadow-card` agora é `none`). Sombra só no que flutua: menus, diálogos, avisos (`shadow-pop`).
-- Nada de ícone dentro de quadradinho colorido em indicador, nada de sparkline enfeite, nada de cartões idênticos em fila (os indicadores do Dashboard são números tipográficos numa faixa, sem cartões).
+- Nada de ícone dentro de quadradinho colorido em indicador, nada de sparkline enfeite, nada de cartões idênticos em fila (a Fase 5 troca os indicadores do Dashboard por números tipográficos).
 
 ## 5. Movimento
 
@@ -80,6 +80,6 @@ Seleção de texto, cursor de digitação, anel de foco e barras de rolagem usam
 ## 7. O que ainda falta (por fase)
 
 - **Fase 4 — Landing:** direção própria sorteada (Taste `draw.mjs` + Impeccable `concept-seed`), com os três planos e preços.
-- **Fase 5 — Painel:** feito (casca Framed sheet, indicadores como texto, `cacau`). Os títulos de cartão usam ícone neutro, sem quadradinho colorido.
+- **Fase 5 — Painel:** casca *Framed sheet*, indicadores como texto, tabelas sem listras, renomear `lilac` → `cacau`, menus ocultos por plano.
 - **Fase 6 — Loja:** tema da confeitaria (já existe `shopTheme` quente) + cor escolhida, fotos em destaque.
 - Revisar o aviso do Impeccable sobre fontes muito usadas: Figtree e Bricolage foram escolhidas antes desta fase e ficam por decisão de continuidade da marca.

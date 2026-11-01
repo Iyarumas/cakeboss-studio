@@ -400,7 +400,7 @@ function shopTheme(withAccent: boolean): CSSProperties {
     '--text': '59 35 20',
     '--muted': '124 90 68',
   };
-  if (withAccent) Object.assign(t, { '--pink': '190 47 85', '--pink-ink': '163 36 70', '--pink-soft': '251 228 233', '--cacau': '180 83 9', '--cacau-soft': '253 236 211' });
+  if (withAccent) Object.assign(t, { '--pink': '190 47 85', '--pink-ink': '163 36 70', '--pink-soft': '251 228 233', '--lilac': '180 83 9', '--lilac-soft': '253 236 211' });
   return t as CSSProperties;
 }
 

@@ -168,7 +168,7 @@ export default function OrdersPage() {
             <div className="flex items-center gap-2">
               {customerName && (
                 <button
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-cacau-soft px-3 text-[13px] font-medium text-cacau"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-lilac-soft px-3 text-[13px] font-medium text-lilac"
                   onClick={() => {
                     params.delete('cliente');
                     setParams(params);

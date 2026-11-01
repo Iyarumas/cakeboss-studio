@@ -94,7 +94,7 @@ export default function CustomersPage() {
                       <tr key={c.id} className="cursor-pointer hover:bg-subtle/50" onClick={(e) => !(e.target as HTMLElement).closest('button') && setProfileId(c.id)}>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
-                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cacau-soft text-xs font-semibold text-cacau">{c.name.slice(0, 1).toUpperCase()}</span>
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac">{c.name.slice(0, 1).toUpperCase()}</span>
                             <div className="min-w-0">
                               <button type="button" onClick={() => setProfileId(c.id)} className="block max-w-full truncate text-left font-medium hover:text-pink hover:underline">
                                 {c.name}

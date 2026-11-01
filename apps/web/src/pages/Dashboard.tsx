@@ -10,9 +10,11 @@ import {
   Check,
   ChevronRight,
   ClipboardList,
+  Clock,
   Flame,
   ListChecks,
   MessageCircle,
+  Percent,
   Plus,
   ScrollText,
   ShoppingBag,
@@ -33,16 +35,18 @@ import { Button, Card, CardHeader, Select, SliderField, cx } from '../components
 import { AnimatedCounter, stagger } from '../components/motion';
 import { CostBars, CostDonut } from '../components/CostCharts';
 
-/** One figure in the indicator strip: plain type, colored only when the number itself is good or bad news. */
-function Kpi({ label, value, foot, to, tone }: { label: string; value: ReactNode; foot?: ReactNode; to: string; tone?: 'good' | 'bad' | 'warn' }) {
-  const t = tone ? { good: 'text-profit', bad: 'text-loss', warn: 'text-warn' }[tone] : 'text-ink';
+function Kpi({ label, value, icon, foot, tone }: { label: string; value: ReactNode; icon: ReactNode; foot?: ReactNode; tone?: 'pink' | 'lilac' | 'green' | 'amber' | 'red' }) {
+  const t = { pink: 'bg-pink-soft text-pink', lilac: 'bg-lilac-soft text-lilac', green: 'bg-profit-soft text-profit', amber: 'bg-warn-soft text-warn', red: 'bg-loss-soft text-loss' }[tone ?? 'pink'];
   return (
-    <motion.div variants={stagger.item} className="min-w-0">
-      <Link to={to} className="group block rounded-card px-4 py-3 transition-colors duration-150 hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40">
-        <dt className="truncate text-xs font-medium text-muted">{label}</dt>
-        <dd className={cx('mt-1 truncate text-[28px] font-semibold leading-tight tracking-tight tabular', t)}>{value}</dd>
-        {foot && <dd className="mt-0.5 truncate text-xs text-muted">{foot}</dd>}
-      </Link>
+    <motion.div variants={stagger.item}>
+      <Card className="h-full p-4">
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-[13px] font-medium text-muted">{label}</span>
+          <span className={cx('grid h-8 w-8 place-items-center rounded-lg', t)}>{icon}</span>
+        </div>
+        <div className="mt-2 text-2xl font-bold tabular">{value}</div>
+        {foot && <div className="mt-1 text-xs text-muted">{foot}</div>}
+      </Card>
     </motion.div>
   );
 }
@@ -153,13 +157,13 @@ function TodayCard({ lowStock }: { lowStock: number }) {
   const rows = [
     { n: late, label: late === 1 ? 'pedido atrasado' : 'pedidos atrasados', to: '/pedidos', tone: 'red' as const, icon: <TriangleAlert size={16} /> },
     { n: today, label: today === 1 ? 'entrega hoje' : 'entregas hoje', to: '/pedidos', tone: 'pink' as const, icon: <Truck size={16} /> },
-    { n: tomorrow, label: tomorrow === 1 ? 'entrega amanhã' : 'entregas amanhã', to: '/pedidos', tone: 'cacau' as const, icon: <CalendarClock size={16} /> },
+    { n: tomorrow, label: tomorrow === 1 ? 'entrega amanhã' : 'entregas amanhã', to: '/pedidos', tone: 'lilac' as const, icon: <CalendarClock size={16} /> },
     { n: fromShop, label: fromShop === 1 ? 'pedido novo da loja' : 'pedidos novos da loja', to: '/pedidos', tone: 'pink' as const, icon: <Store size={16} /> },
     { n: unpaid, label: unpaid === 1 ? 'pedido pronto sem pagamento completo' : 'pedidos prontos sem pagamento completo', to: '/pedidos?filtro=todos', tone: 'amber' as const, icon: <Wallet size={16} /> },
-    { n: quotes, label: quotes === 1 ? 'orçamento esperando resposta' : 'orçamentos esperando resposta', to: '/pedidos?filtro=orcamento', tone: 'cacau' as const, icon: <MessageCircle size={16} /> },
+    { n: quotes, label: quotes === 1 ? 'orçamento esperando resposta' : 'orçamentos esperando resposta', to: '/pedidos?filtro=orcamento', tone: 'lilac' as const, icon: <MessageCircle size={16} /> },
     { n: lowStock, label: lowStock === 1 ? 'item com estoque baixo' : 'itens com estoque baixo', to: '/estoque', tone: 'amber' as const, icon: <Boxes size={16} /> },
   ].filter((r) => r.n > 0);
-  const tone = { red: 'text-loss', pink: 'text-pink', cacau: 'text-cacau', amber: 'text-warn' };
+  const tone = { red: 'bg-loss-soft text-loss', pink: 'bg-pink-soft text-pink', lilac: 'bg-lilac-soft text-lilac', amber: 'bg-warn-soft text-warn' };
 
   return (
     <Card className="flex h-full flex-col">
@@ -177,7 +181,7 @@ function TodayCard({ lowStock }: { lowStock: number }) {
           {rows.map((r) => (
             <li key={r.label}>
               <Link to={r.to} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-subtle/60">
-                <span className={cx('shrink-0', tone[r.tone])}>{r.icon}</span>
+                <span className={cx('grid h-8 w-8 shrink-0 place-items-center rounded-lg', tone[r.tone])}>{r.icon}</span>
                 <span className="min-w-0 flex-1 text-sm">
                   <b className="tabular font-semibold">{r.n}</b> {r.label}
                 </span>
@@ -341,22 +345,22 @@ export default function Dashboard() {
             <TodayCard lowStock={lowStock.length} />
           </motion.div>
           {/* money first: it is what the day is measured by */}
-          <dl className="-mx-4 grid grid-cols-2 gap-y-1 md:grid-cols-3 xl:grid-cols-6">
-            <Kpi label="Recebido no mês" value={<AnimatedCounter value={received} format={money} />} foot={`saídas ${money(spent)}`} to="/financeiro" />
-            <Kpi label="A receber" value={<AnimatedCounter value={receivable} format={money} />} foot="de pedidos confirmados" to="/pedidos?filtro=todos" />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            <Kpi label="Recebido no mês" value={<AnimatedCounter value={received} format={money} />} icon={<Wallet size={16} />} tone="green" foot={`saídas ${money(spent)}`} />
+            <Kpi label="A receber" value={<AnimatedCounter value={receivable} format={money} />} icon={<Clock size={16} />} tone="amber" foot="pedidos confirmados" />
             <Kpi
               label="Margem média"
-              value={Number.isFinite(avgMargin) ? <AnimatedCounter value={avgMargin} format={(v) => pct(v)} /> : '—'}
-              tone={Number.isFinite(avgMargin) && avgMargin < 0 ? 'bad' : undefined}
-              foot="dos produtos com preço"
-              to="/fichas"
+              value={<AnimatedCounter value={avgMargin} format={(v) => pct(v)} />}
+              icon={<Percent size={16} />}
+              tone={Number.isFinite(avgMargin) && avgMargin < 0 ? 'red' : 'green'}
+              foot="produtos com preço"
             />
-            <Kpi label="Abaixo da margem" value={belowTarget.length} tone={belowTarget.length ? 'bad' : undefined} foot={belowTarget.length === 1 ? 'produto' : 'produtos'} to="/fichas" />
-            <Kpi label="Estoque baixo" value={lowStock.length} tone={lowStock.length ? 'warn' : undefined} foot={lowStock.length === 1 ? 'item no mínimo' : 'itens no mínimo'} to="/estoque" />
-            <Kpi label="Fichas técnicas" value={db.recipes.length} foot={`${db.recipes.length - withPrice.length} sem preço oficial`} to="/fichas" />
-          </dl>
+            <Kpi label="Abaixo da margem" value={belowTarget.length} icon={<TriangleAlert size={16} />} tone={belowTarget.length ? 'red' : 'green'} foot="margem < desejada" />
+            <Kpi label="Estoque baixo" value={lowStock.length} icon={<Boxes size={16} />} tone={lowStock.length ? 'amber' : 'green'} foot="itens no mínimo" />
+            <Kpi label="Fichas técnicas" value={db.recipes.length} icon={<ClipboardList size={16} />} foot={`${db.recipes.length - withPrice.length} sem preço oficial`} />
+          </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
             <motion.div variants={stagger.item} className="hidden md:block xl:col-span-5">
               <TodayCard lowStock={lowStock.length} />
             </motion.div>
@@ -410,7 +414,7 @@ export default function Dashboard() {
                         />
                         <Bar dataKey="margem" radius={[0, 6, 6, 0]} barSize={18} animationDuration={500}>
                           {marginData.map((d) => (
-                            <Cell key={d.name} fill={d.margem < 0 ? 'rgb(var(--red))' : d.margem < d.alvo ? 'rgb(var(--amber))' : 'rgb(var(--green))'} />
+                            <Cell key={d.name} fill={d.margem < 0 ? '#DC2626' : d.margem < d.alvo ? '#D97706' : '#059669'} />
                           ))}
                         </Bar>
                       </BarChart>

@@ -34,7 +34,7 @@ export function CustomerProfile({ customer, onEdit, onWhatsApp }: { customer: Cu
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show" className="pb-6">
       <div className="flex items-start gap-3 border-b border-divider px-5 py-4">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cacau-soft text-base font-semibold text-cacau">{customer.name.slice(0, 1).toUpperCase()}</span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-lilac-soft text-base font-semibold text-lilac">{customer.name.slice(0, 1).toUpperCase()}</span>
         <div className="min-w-0 flex-1">
           <div className="truncate text-base font-semibold">{customer.name}</div>
           <div className="text-xs text-muted">

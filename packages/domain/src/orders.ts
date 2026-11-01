@@ -1,9 +1,9 @@
 import { priceRecipe, type PricingContext } from './pricing';
 import type { Order, OrderStatus, PaymentMethod, Recipe, Transaction } from './types';
 
-export const STATUS: Record<OrderStatus, { label: string; tone: 'gray' | 'cacau' | 'pink' | 'amber' | 'green' | 'red' }> = {
+export const STATUS: Record<OrderStatus, { label: string; tone: 'gray' | 'lilac' | 'pink' | 'amber' | 'green' | 'red' }> = {
   orcamento: { label: 'Orçamento', tone: 'gray' },
-  confirmado: { label: 'Confirmado', tone: 'cacau' },
+  confirmado: { label: 'Confirmado', tone: 'lilac' },
   em_producao: { label: 'Em produção', tone: 'pink' },
   pronto: { label: 'Pronto', tone: 'amber' },
   entregue: { label: 'Entregue', tone: 'green' },

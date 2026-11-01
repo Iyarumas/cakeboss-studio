@@ -304,7 +304,7 @@ export function MaterialsPage() {
                         {m.name} {m.sample && <Badge tone="amber">exemplo</Badge>}
                       </td>
                       <td className="px-3 py-3">
-                        <Badge tone={m.kind === 'embalagem' ? 'amber' : m.kind === 'adesivo' ? 'cacau' : 'gray'}>{KIND_LABEL[m.kind]}</Badge>
+                        <Badge tone={m.kind === 'embalagem' ? 'amber' : m.kind === 'adesivo' ? 'lilac' : 'gray'}>{KIND_LABEL[m.kind]}</Badge>
                       </td>
                       <td className="px-3 py-3 text-right tabular text-muted">
                         {m.packageQty} un · {money(m.packagePrice)}

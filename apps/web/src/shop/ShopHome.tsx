@@ -76,7 +76,7 @@ export default function ShopHome() {
               </ul>
             )}
             <div className="mt-5 flex items-start gap-3 rounded-2xl bg-subtle p-4 text-sm">
-              <Store size={18} className="mt-0.5 shrink-0 text-cacau" />
+              <Store size={18} className="mt-0.5 shrink-0 text-lilac" />
               <span>
                 <b>Retirada sem custo</b>
                 {st.pickupAddress ? ` em ${st.pickupAddress}` : ''}. Vendemos apenas para Navegantes e região.
@@ -86,7 +86,7 @@ export default function ShopHome() {
 
           <motion.div id="pagamento" initial={reduce ? false : { opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="scroll-mt-24 rounded-3xl bg-surface p-7">
             <div className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-cacau-soft text-cacau">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-lilac-soft text-lilac">
                 <CreditCard size={20} />
               </span>
               <h2 className="font-display text-2xl font-bold">Como pagar</h2>
@@ -108,7 +108,7 @@ export default function ShopHome() {
               </div>
               <div className="rounded-2xl bg-subtle p-4">
                 <div className="flex items-center gap-2 font-semibold">
-                  <Store size={16} className="text-cacau" /> Retirada
+                  <Store size={16} className="text-lilac" /> Retirada
                 </div>
                 <ul className="mt-2 space-y-1.5 text-sm text-muted">
                   <li className="flex gap-2">
