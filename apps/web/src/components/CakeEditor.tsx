@@ -190,7 +190,7 @@ export function CakeEditor({ initial, onSave, onCancel, onDelete }: { initial: C
 
       <Step n={3} title="Recheios" hint="Uma ficha técnica por recheio, com os ingredientes de 1 receita (1 camada).">
         <Components kind="Recheio" list={c.recheios} onChange={(recheios) => set({ recheios })} />
-        <Field label="Quantos recheios o cliente pode escolher" className="mt-3 max-w-xs" hint="2 recheios = 3 camadas de massa + 2 de recheio.">
+        <Field label="Quantos recheios o cliente pode escolher" className="mt-3 max-w-xs" hint={`${c.maxRecheios} ${c.maxRecheios === 1 ? 'recheio' : 'recheios'} = ${c.maxRecheios + 1} camadas de massa + ${c.maxRecheios} de recheio.`}>
           <Select value={String(c.maxRecheios)} onChange={(e) => set({ maxRecheios: Number(e.target.value) })}>
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>
