@@ -1,0 +1,7 @@
+{
+  "name": "@cakeboss/domain",
+  "private": true,
+  "type": "module",
+  "description": "Pure CakeBoss business rules (pricing, cakes, store, promotions). No browser or server APIs: shared by apps/web and supabase/functions.",
+  "exports": { "./*": "./src/*.ts" }
+}

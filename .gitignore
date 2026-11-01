@@ -25,3 +25,5 @@ dist-ssr
 
 # capturas geradas pelas skills de design
 .taste-skill/
+
+node_modules
