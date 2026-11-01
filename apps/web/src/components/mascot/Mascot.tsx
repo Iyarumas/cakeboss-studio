@@ -553,9 +553,14 @@ function MascotActor({
                   {tip.action.label}
                 </button>
               )}
-              {tips.length > 1 && (
-                <button type="button" onClick={() => setTipIdx((i) => ((i ?? 0) + 1) % tips.length)} className="inline-flex h-8 items-center gap-0.5 rounded-lg px-2 text-[13px] font-medium text-muted hover:bg-subtle hover:text-ink">
+              {/* the last message ends the round instead of starting over from the first */}
+              {(tipIdx! % tips.length) + 1 < tips.length ? (
+                <button type="button" onClick={() => setTipIdx((i) => (i ?? 0) + 1)} className="inline-flex h-8 items-center gap-0.5 rounded-lg px-2 text-[13px] font-medium text-muted hover:bg-subtle hover:text-ink">
                   Próxima <ChevronRight size={14} />
+                </button>
+              ) : (
+                <button type="button" onClick={() => setTipIdx(null)} className="inline-flex h-8 items-center rounded-lg px-2 text-[13px] font-medium text-muted hover:bg-subtle hover:text-ink">
+                  Entendi
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular text-muted">
