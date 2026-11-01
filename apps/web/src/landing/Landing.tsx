@@ -451,6 +451,8 @@ export default function Landing() {
           <div className="lp-tiles">
             {PLANS.map((p, i) => (
               <article key={p.code} className="lp-tile pearl-top" data-rise style={{ ['--i' as string]: i }} aria-labelledby={`plan-${p.code}`}>
+                {/* the middle plan is the one most bakeries need: own store, no commission */}
+                {p.code === 'premium' && <span className="lp-tile__badge">Recomendado para vender online</span>}
                 <h3 id={`plan-${p.code}`}>{p.name}</h3>
                 <p className="lp-tile__for">{p.forWho}</p>
                 <p className="lp-tile__inc">{p.includes}</p>

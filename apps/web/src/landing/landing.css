@@ -177,9 +177,10 @@ html:has(.lp), body:has(.lp) { background: #ffffff; }
 .lp-plans__head p { grid-column: 8 / span 5; color: var(--lp-ink); }
 .lp-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
 .lp-tile { display: flex; flex-direction: column; padding: calc(var(--lp-pearl) + 28px) 28px 28px; }
-.lp-tile:nth-child(1) { min-height: 380px; background: var(--lp-accent-soft); color: var(--lp-ink); }
-.lp-tile:nth-child(2) { min-height: 500px; background: var(--lp-accent); color: #fff; }
-.lp-tile:nth-child(3) { min-height: 620px; background: var(--lp-choc); color: var(--lp-cream); }
+.lp-tile:nth-child(1) { min-height: 400px; background: var(--lp-accent-soft); color: var(--lp-ink); }
+.lp-tile:nth-child(2) { min-height: 640px; background: var(--lp-accent); color: #fff; box-shadow: 0 24px 48px -24px rgb(157 23 77 / 0.55); position: relative; z-index: 1; }
+.lp-tile:nth-child(3) { min-height: 520px; background: var(--lp-choc); color: var(--lp-cream); }
+.lp-tile__badge { align-self: flex-start; margin-bottom: 16px; padding: 6px 12px; border-radius: 999px; background: var(--lp-cream); color: var(--lp-choc); font: 600 var(--fs-small)/1.2 'Figtree Variable', system-ui, sans-serif; }
 .lp-tile h3 { font-size: clamp(30px, 2.8vw, 44px); }
 .lp-tile__for { margin-top: 12px; font-size: var(--fs-body); max-width: 26ch; }
 .lp-tile__inc { margin-top: auto; padding-top: 28px; font-size: var(--fs-small); max-width: 34ch; }
