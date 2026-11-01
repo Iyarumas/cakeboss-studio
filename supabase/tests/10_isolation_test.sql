@@ -16,6 +16,8 @@ do $$ begin
   assert (select status from public.subscriptions where workspace_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 'test_grant', 'concessão explícita';
   assert (select count(*) from public.delivery_zones where workspace_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 1, 'só cidade com taxa vira zona';
   assert (select whatsapp from public.store_settings where workspace_id = 'aaaaaaaa-0000-0000-0000-000000000001') = '47999990001', 'whatsapp limpo';
+  assert (select count(*) from public.promotions where workspace_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 1, 'só a promoção válida migra';
+  assert (select tagline from public.store_settings where workspace_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 'Feito com carinho', 'frase da loja';
   raise notice 'ok 1: migração dos dados';
 end $$;
 
@@ -79,18 +81,12 @@ do $$ declare n int; begin
   raise notice 'ok 5: pedido do painel com número sequencial';
 end $$;
 
--- 6. Recursos por plano: Bia (Básico) não publica loja nem usa mensagens
+-- 6. Recursos por plano: Bia (Básico) pode montar a loja, mas ela não aparece ao público
 select set_config('request.jwt.claim.sub', :'bia', false);
 do $$ begin
-  begin
-    update public.store_settings set enabled = true where workspace_id = 'bbbbbbbb-0000-0000-0000-000000000002';
-    if (select enabled from public.store_settings where workspace_id = 'bbbbbbbb-0000-0000-0000-000000000002') then
-      raise exception 'FALHOU: Básico publicou loja';
-    end if;
-  exception when insufficient_privilege then null;
-  end;
+  update public.store_settings set enabled = true where workspace_id = 'bbbbbbbb-0000-0000-0000-000000000002';
   assert public.my_workspace_access('bbbbbbbb-0000-0000-0000-000000000002')->'features' = '["gestao"]'::jsonb, 'features do básico';
-  raise notice 'ok 6: loja bloqueada no Básico';
+  raise notice 'ok 6: Básico monta a loja sem publicar';
 end $$;
 
 -- 7. Funcionária não exclui nem configura pagamentos
@@ -116,6 +112,8 @@ do $$ declare s jsonb; begin
   assert not (s::text like '%ingredientId%'), 'vitrine expôs a ficha técnica';
   assert not (s::text like '%Carla%'), 'vitrine expôs cliente';
   assert s->'online_payment' = 'null'::jsonb, 'pagamento online sem gateway conectado';
+  assert s->>'name' = 'Doces da Ana' and s->>'tagline' = 'Feito com carinho', 'nome e frase da loja';
+  assert jsonb_array_length(s->'promotions') = 1, 'promoção aparece na vitrine';
   assert public.get_store('bolos-da-bia') is null, 'loja do Básico apareceu';
   begin
     perform 1 from public.orders limit 1;

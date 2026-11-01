@@ -76,7 +76,7 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
               <div className="truncate text-xs text-muted">{user?.email}</div>
               <div className="mt-2 flex items-center gap-2 text-xs text-muted">
                 <span className="truncate">{ws.name}</span>
-                <Badge tone="lilac">Plano {PLAN_LABEL[ws.plan]}</Badge>
+                {ws.plan && <Badge tone="lilac">Plano {PLAN_LABEL[ws.plan]}</Badge>}
               </div>
             </div>
             <div className="pt-1.5">

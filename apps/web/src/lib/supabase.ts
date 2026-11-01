@@ -10,9 +10,9 @@ export const supabase = createClient(url ?? 'http://localhost', key ?? 'missing'
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
 
-export type Plan = 'basico' | 'loja' | 'completo';
+export type Plan = 'basico' | 'premium' | 'plus';
 
-export const PLAN_LABEL: Record<Plan, string> = { basico: 'Básico', loja: 'Loja', completo: 'Completo' };
+export const PLAN_LABEL: Record<Plan, string> = { basico: 'Básico', premium: 'Premium', plus: 'Plus' };
 
 /** Turns Supabase auth errors into Portuguese messages that say what to do. */
 export function authMessage(error: { message?: string; code?: string; status?: number } | null | undefined): string {

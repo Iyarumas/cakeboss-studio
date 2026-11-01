@@ -4,18 +4,24 @@ import { useAuth } from '../auth/AuthProvider';
 import { FullScreenMessage } from '../auth/AuthPages';
 import { supabase, type Plan } from '../lib/supabase';
 import type { DB } from '@cakeboss/domain/types';
+import { PLANS, planPrice } from '@cakeboss/domain/plans';
 import { StoreProvider, defaultSettings, emptyDb, hasLocalData, loadLocal } from '../store/store';
 import { Button, Field, TextInput } from '../components/ui';
-import { useToast } from '../components/motion';
 import { BrandMark } from '../components/BrandMark';
 import { BRAND_DRAFT_KEY } from '../landing/draft';
+import { loadTenant, saveDiff } from './tables';
 
 export type SaveState = 'salvo' | 'pendente' | 'salvando' | 'erro';
 
 interface Workspace {
   id: string;
   name: string;
-  plan: Plan;
+  /** public address of the store: /loja/<slug> */
+  slug: string | null;
+  /** current plan, or null while no subscription or grant is active */
+  plan: Plan | null;
+  /** what the plan unlocks, as the database computes it ('gestao', 'loja', 'mensagens'…) */
+  features: string[];
   saveState: SaveState;
   /** sends any change still waiting to be saved (used before signing out) */
   flush: () => Promise<void>;
@@ -29,26 +35,40 @@ export function useWorkspace() {
   return w;
 }
 
-type Loaded = { id: string; name: string; plan: Plan; data: DB; version: number };
-type State = { status: 'loading' } | { status: 'none' } | { status: 'error'; message: string } | ({ status: 'ready' } & Loaded);
+type Access = { plan: Plan | null; status: string | null; features: string[] };
+type Loaded = { id: string; name: string; slug: string | null; access: Access; data: DB };
+type State = { status: 'loading' } | { status: 'none' } | { status: 'error'; message: string } | { status: 'no-plan'; id: string; name: string; access: Access } | ({ status: 'ready' } & Loaded);
 
-async function fetchWorkspace(userId: string): Promise<Loaded | null> {
+async function fetchAccess(id: string): Promise<Access> {
+  const { data, error } = await supabase.rpc('my_workspace_access', { ws: id });
+  if (error) throw error;
+  const a = (data ?? {}) as { features?: string[]; subscription?: { plan?: Plan; status?: string } | null };
+  return { plan: a.subscription?.plan ?? null, status: a.subscription?.status ?? null, features: a.features ?? [] };
+}
+
+async function fetchWorkspace(userId: string): Promise<{ id: string; name: string; slug: string | null; access: Access; data: DB | null } | null> {
   const { data: member, error: e1 } = await supabase.from('workspace_members').select('workspace_id').eq('user_id', userId).order('created_at').limit(1).maybeSingle();
   if (e1) throw e1;
   if (!member) return null;
   const id = member.workspace_id as string;
-  const [ws, data] = await Promise.all([
-    supabase.from('workspaces').select('name, plan').eq('id', id).single(),
-    supabase.from('workspace_data').select('data, version').eq('workspace_id', id).single(),
+  const [ws, access, legacy] = await Promise.all([
+    supabase.from('workspaces').select('name, slug').eq('id', id).single(),
+    fetchAccess(id),
+    supabase.from('workspace_data').select('imported_at').eq('workspace_id', id).maybeSingle(),
   ]);
   if (ws.error) throw ws.error;
-  if (data.error) throw data.error;
-  return { id, name: ws.data.name as string, plan: ws.data.plan as Plan, data: data.data.data as DB, version: data.data.version as number };
+  if (legacy.error) throw legacy.error;
+  // a confeitaria created with data from this browser: copy it into the tables once
+  if (legacy.data && !legacy.data.imported_at) {
+    const { error } = await supabase.rpc('import_my_workspace_data', { ws: id });
+    if (error) throw error;
+  }
+  return { id, name: ws.data.name as string, slug: (ws.data.slug as string) ?? null, access, data: access.features.length ? await loadTenant(id) : null };
 }
 
 /**
  * Loads the signed-in person's confeitaria from the cloud (or asks them to create it) and runs the
- * system on that data, saving every change back a moment after it happens.
+ * system on that data, saving each change to its own rows a moment after it happens.
  */
 export function WorkspaceGate({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -59,7 +79,9 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
     setState({ status: 'loading' });
     try {
       const w = await fetchWorkspace(user.id);
-      setState(w ? { status: 'ready', ...w } : { status: 'none' });
+      if (!w) setState({ status: 'none' });
+      else if (!w.data) setState({ status: 'no-plan', id: w.id, name: w.name, access: w.access });
+      else setState({ status: 'ready', id: w.id, name: w.name, slug: w.slug, access: w.access, data: w.data });
     } catch {
       setState({ status: 'error', message: 'Não foi possível carregar os dados da sua confeitaria.' });
     }
@@ -72,6 +94,7 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
   if (state.status === 'loading') return <FullScreenMessage>Abrindo sua confeitaria…</FullScreenMessage>;
   if (state.status === 'error') return <LoadError message={state.message} onRetry={load} />;
   if (state.status === 'none') return <CreateWorkspace onCreated={load} />;
+  if (state.status === 'no-plan') return <ChoosePlan id={state.id} name={state.name} access={state.access} onChanged={load} />;
   return (
     <CloudStore key={state.id} initial={state}>
       {children}
@@ -80,30 +103,12 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
 }
 
 function CloudStore({ initial, children }: { initial: Loaded; children: ReactNode }) {
-  const toast = useToast();
-  // a new snapshot (with a new key) remounts the store when the data has to be replaced by the cloud's
-  const [snapshot, setSnapshot] = useState({ data: initial.data, key: 0 });
   const [saveState, setSaveState] = useState<SaveState>('salvo');
-  const version = useRef(initial.version);
+  // the version last written to the cloud, and the newest one waiting to be written
+  const saved = useRef<DB>(initial.data);
   const pending = useRef<DB | null>(null);
   const inFlight = useRef<Promise<void> | null>(null);
   const timer = useRef<number | undefined>(undefined);
-
-  const replaceWithCloud = useCallback(
-    async (message: string) => {
-      const { data, error } = await supabase.from('workspace_data').select('data, version').eq('workspace_id', initial.id).single();
-      if (error) {
-        setSaveState('erro');
-        return;
-      }
-      pending.current = null;
-      version.current = data.version as number;
-      setSnapshot((s) => ({ data: data.data as DB, key: s.key + 1 }));
-      setSaveState('salvo');
-      toast(message, 'info');
-    },
-    [initial.id, toast],
-  );
 
   const flush = useCallback(async (): Promise<void> => {
     window.clearTimeout(timer.current);
@@ -117,26 +122,22 @@ function CloudStore({ initial, children }: { initial: Loaded; children: ReactNod
     pending.current = null;
     setSaveState('salvando');
     const run = (async () => {
-      const { data, error } = await supabase.rpc('save_workspace_data', { ws: initial.id, new_data: next, expected_version: version.current });
-      if (error) {
-        // keep the change and try again shortly; a newer change, if any, already includes this one
+      try {
+        await saveDiff(initial.id, saved.current, next);
+        saved.current = next;
+        setSaveState(pending.current ? 'pendente' : 'salvo');
+      } catch {
+        // keep the change (a newer one already includes it) and try again shortly
         pending.current ??= next;
         setSaveState('erro');
         timer.current = window.setTimeout(() => void flush(), 5000);
-        return;
       }
-      if (data === null) {
-        await replaceWithCloud('Esta confeitaria foi alterada em outro aparelho. Carregamos a versão mais nova — confira sua última alteração.');
-        return;
-      }
-      version.current = data as number;
-      setSaveState(pending.current ? 'pendente' : 'salvo');
     })();
     inFlight.current = run;
     await run;
     inFlight.current = null;
     if (pending.current) await flush();
-  }, [initial.id, replaceWithCloud]);
+  }, [initial.id]);
 
   const persist = useCallback(
     (db: DB) => {
@@ -147,17 +148,6 @@ function CloudStore({ initial, children }: { initial: Loaded; children: ReactNod
     },
     [flush],
   );
-
-  // coming back to the tab: pick up what another device saved meanwhile
-  useEffect(() => {
-    const onVisible = async () => {
-      if (document.visibilityState !== 'visible' || pending.current || inFlight.current) return;
-      const { data } = await supabase.from('workspace_data').select('version').eq('workspace_id', initial.id).single();
-      if (data && (data.version as number) > version.current && !pending.current && !inFlight.current) await replaceWithCloud('Atualizamos com as alterações feitas em outro aparelho.');
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [initial.id, replaceWithCloud]);
 
   // closing the tab with a change still unsent: the browser asks before leaving
   useEffect(() => {
@@ -172,14 +162,71 @@ function CloudStore({ initial, children }: { initial: Loaded; children: ReactNod
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  const value = useMemo<Workspace>(() => ({ id: initial.id, name: initial.name, plan: initial.plan, saveState, flush }), [initial, saveState, flush]);
+  const value = useMemo<Workspace>(
+    () => ({ id: initial.id, name: initial.name, slug: initial.slug, plan: initial.access.plan, features: initial.access.features, saveState, flush }),
+    [initial, saveState, flush],
+  );
 
   return (
     <WorkspaceCtx.Provider value={value}>
-      <StoreProvider key={snapshot.key} initial={snapshot.data} persist={persist}>
+      <StoreProvider initial={initial.data} persist={persist}>
         {children}
       </StoreProvider>
     </WorkspaceCtx.Provider>
+  );
+}
+
+/** Shown while the confeitaria has no active plan: the choice is recorded; access opens when billing confirms it. */
+function ChoosePlan({ id, name, access, onChanged }: { id: string; name: string; access: Access; onChanged: () => void }) {
+  const { signOut } = useAuth();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const choose = async (plan: string) => {
+    setBusy(plan);
+    setError('');
+    const { error: err } = await supabase.rpc('choose_plan', { ws: id, plan });
+    setBusy(null);
+    if (err) return setError('Não foi possível registrar o plano agora. Tente de novo.');
+    onChanged();
+  };
+  const waiting = access.status === 'billing_not_configured' || access.status === 'pending_payment';
+  return (
+    <div className="min-h-screen bg-bg px-4 py-10">
+      <div className="mx-auto max-w-4xl">
+        <BrandMark size={48} />
+        <h1 className="mt-5 text-2xl font-extrabold">{waiting ? 'Plano escolhido' : `Escolha o plano da ${name}`}</h1>
+        <p className="mt-1.5 max-w-2xl text-sm text-muted">
+          {waiting
+            ? `Você escolheu o ${PLANS.find((p) => p.code === access.plan)?.name ?? 'plano'}. As assinaturas do CakeBoss abrem em breve: assim que a cobrança começar, você cadastra o cartão ou paga no Pix e o painel é liberado. Seus dados já estão guardados.`
+            : 'As assinaturas abrem em breve. Escolha agora o plano que quer usar; quando a cobrança começar, você cadastra o cartão ou paga no Pix e o painel é liberado.'}
+        </p>
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {PLANS.map((p) => (
+            <div key={p.code} className={'rounded-card border bg-surface p-5 ' + (access.plan === p.code ? 'border-pink' : 'border-line')}>
+              <div className="text-lg font-bold">{p.name}</div>
+              <div className="mt-1 text-2xl font-extrabold tabular">
+                {planPrice(p.priceCents)}
+                <span className="text-sm font-medium text-muted"> /mês</span>
+              </div>
+              <p className="mt-2 text-sm">{p.forWho}</p>
+              <p className="mt-2 text-xs text-muted">{p.includes}</p>
+              <Button className="mt-4 w-full" variant={access.plan === p.code ? 'secondary' : 'primary'} disabled={!!busy || access.plan === p.code} onClick={() => void choose(p.code)}>
+                {busy === p.code && <Loader2 size={15} className="animate-spin" />}
+                {access.plan === p.code ? 'Plano escolhido' : `Escolher ${p.name}`}
+              </Button>
+            </div>
+          ))}
+        </div>
+        {error && (
+          <p role="alert" className="mt-4 rounded-lg border border-loss/25 bg-loss-soft px-3 py-2.5 text-sm text-loss">
+            {error}
+          </p>
+        )}
+        <button type="button" onClick={() => void signOut()} className="mt-6 text-sm font-medium text-pink hover:underline">
+          Sair
+        </button>
+      </div>
+    </div>
   );
 }
 

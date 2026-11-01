@@ -17,7 +17,7 @@ alter table public.workspaces
 
 -- palavras que não podem virar endereço de loja
 create table private.reserved_slugs (slug text primary key);
-insert into private.reserved_slugs values ('entrar'), ('criar-conta'), ('admin'), ('api'), ('planos'), ('loja'), ('conta'), ('suporte'), ('cakeboss');
+insert into private.reserved_slugs values ('entrar'), ('criar-conta'), ('finalizar'), ('conheca'), ('admin'), ('api'), ('planos'), ('loja'), ('conta'), ('suporte'), ('cakeboss');
 
 alter table public.workspace_members drop constraint workspace_members_role_check;
 alter table public.workspace_members add constraint workspace_members_role_check check (role in ('owner', 'admin', 'staff'));

@@ -21,6 +21,23 @@ import { HistoryPage, OperatingCostsPage, ProductionsPage, SettingsPage, StockPa
 
 // the public store (with the 3D scene) is loaded only when someone opens /loja
 const ShopApp = lazy(() => import('./shop/ShopApp'));
+const CloudShop = lazy(() => import('./shop/CloudShop'));
+
+/** /loja (and its finalizar/conta pages) is the demo on this browser's data; /loja/<slug> is a bakery's real store. */
+function StoreRoute() {
+  const first = useLocation().pathname.split('/')[2] ?? '';
+  if (!first || first === 'finalizar' || first === 'conta')
+    return (
+      <StoreProvider>
+        <ShopApp />
+      </StoreProvider>
+    );
+  return (
+    <Routes>
+      <Route path=":slug/*" element={<CloudShop />} />
+    </Routes>
+  );
+}
 // the public landing is loaded only for visitors who are not signed in
 const Landing = lazy(() => import('./landing/Landing'));
 
@@ -91,12 +108,9 @@ export default function App() {
               <Route
                 path="/loja/*"
                 element={
-                  // the store still runs in demo mode, on this browser's data
-                  <StoreProvider>
-                    <Suspense fallback={<div className="grid min-h-screen place-items-center text-muted">Carregando a loja…</div>}>
-                      <ShopApp />
-                    </Suspense>
-                  </StoreProvider>
+                  <Suspense fallback={<div className="grid min-h-screen place-items-center text-muted">Carregando a loja…</div>}>
+                    <StoreRoute />
+                  </Suspense>
                 }
               />
               <Route element={<AuthShell />}>

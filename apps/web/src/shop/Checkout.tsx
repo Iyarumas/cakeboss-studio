@@ -17,7 +17,7 @@ const METHOD_ICON: Record<string, typeof QrCode> = { pix: QrCode, credito: Credi
 
 export default function Checkout() {
   const { db, saveOrder, saveCustomer } = useStore();
-  const { setQty, clearCart, account, customer, requireLogin } = useShop();
+  const { setQty, clearCart, account, customer, requireLogin, base } = useShop();
   const navigate = useNavigate();
   const toast = useToast();
   const st = storeSettings(db.settings);
@@ -58,7 +58,7 @@ export default function Checkout() {
     return (
       <Section className="py-24 text-center">
         <h1 className="text-2xl font-bold">Seu carrinho está vazio</h1>
-        <Link to="/loja#cardapio" className="mt-4 inline-block font-semibold text-pink hover:underline">
+        <Link to={`${base}#cardapio`} className="mt-4 inline-block font-semibold text-pink hover:underline">
           Ver cardápio
         </Link>
       </Section>
@@ -110,7 +110,7 @@ export default function Checkout() {
 
   return (
     <Section className="py-10">
-      <button onClick={() => navigate('/loja')} className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
+      <button onClick={() => navigate(base)} className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft size={15} /> Continuar comprando
       </button>
       <h1 className="text-3xl font-bold tracking-tight">Finalizar pedido</h1>
@@ -268,6 +268,7 @@ function Block({ n, title, children }: { n: number; title: string; children: Rea
 
 function Success({ order }: { order: Order }) {
   const { db } = useStore();
+  const { base } = useShop();
   const toast = useToast();
   const st = storeSettings(db.settings);
   const wa = normalizePhone(st.whatsapp);
@@ -319,7 +320,7 @@ function Success({ order }: { order: Order }) {
               <MessageCircle size={18} /> Enviar pelo WhatsApp
             </a>
           )}
-          <Link to="/loja/conta" className="inline-flex h-11 items-center rounded-xl border border-line px-5 font-semibold hover:bg-subtle">
+          <Link to={`${base}/conta`} className="inline-flex h-11 items-center rounded-xl border border-line px-5 font-semibold hover:bg-subtle">
             Ver meus pedidos
           </Link>
         </div>

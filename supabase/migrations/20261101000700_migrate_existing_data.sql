@@ -70,8 +70,8 @@ begin
   insert into public.workspace_settings (workspace_id, settings) values (ws, s - 'store')
   on conflict (workspace_id) do nothing;
 
-  insert into public.store_settings (workspace_id, enabled, description, whatsapp, pickup_address, delivery_enabled, lead_hours, accent)
-  values (ws, coalesce((st->>'enabled')::boolean, false), nullif(st->>'about', ''),
+  insert into public.store_settings (workspace_id, enabled, display_name, tagline, logo_path, description, whatsapp, pickup_address, delivery_enabled, lead_hours, accent)
+  values (ws, coalesce((st->>'enabled')::boolean, false), nullif(trim(coalesce(st->>'storeName', '')), ''), nullif(trim(coalesce(st->>'tagline', '')), ''), nullif(st->>'logo', ''), nullif(st->>'about', ''),
           nullif(regexp_replace(coalesce(st->>'whatsapp', ''), '[^0-9]', '', 'g'), ''),
           nullif(st->>'pickupAddress', ''),
           exists (select 1 from jsonb_array_elements(coalesce(st->'zones', '[]')) z where jsonb_typeof(z->'fee') = 'number'),
@@ -83,6 +83,15 @@ begin
   select ws, z->>'id', z->>'city', (z->>'fee')::numeric
     from jsonb_array_elements(coalesce(st->'zones', '[]')) z
    where jsonb_typeof(z->'fee') = 'number' and coalesce(z->>'city', '') <> ''
+  on conflict do nothing;
+
+  insert into public.promotions (workspace_id, id, name, kind, value, recipe_ids, starts_on, ends_on, active, created_at)
+  select ws, x->>'id', left(x->>'name', 60), x->>'kind', (x->>'value')::numeric,
+         coalesce(array(select jsonb_array_elements_text(x->'recipeIds')), '{}'),
+         nullif(x->>'startsOn', '')::date, nullif(x->>'endsOn', '')::date, coalesce((x->>'active')::boolean, true), coalesce(private.ts(x->'createdAt'), now())
+    from jsonb_array_elements(coalesce(st->'promotions', '[]')) x
+   where x->>'kind' in ('percent', 'off') and jsonb_typeof(x->'value') = 'number' and (x->>'value')::numeric > 0
+     and (x->>'kind' <> 'percent' or (x->>'value')::numeric < 100)
   on conflict do nothing;
 
   insert into public.ingredients (workspace_id, id, name, unit, package_qty, package_price, supplier, stock, min_stock, price_history, sample, updated_at)
@@ -97,22 +106,22 @@ begin
     from jsonb_array_elements(coalesce(d->'materials', '[]')) x
   on conflict do nothing;
 
-  -- foto antiga (imagem em texto dentro do JSON) não é copiada: o app sobe para o Storage na primeira edição
+  -- a foto antiga (imagem em texto) é mantida como está; o app a envia para o Storage na próxima edição
   insert into public.recipes (workspace_id, id, name, category, composition, sale_price, target_margin_pct, price_snapshot, sample,
-                              store_visible, store_description, store_options, created_at, updated_at)
+                              store_visible, store_description, store_image_path, store_options, created_at, updated_at)
   select ws, x->>'id', x->>'name', coalesce(x->>'category', ''),
          jsonb_build_object('yield', x->'yield', 'unitLabel', x->'unitLabel', 'prepMinutes', x->'prepMinutes', 'wastePct', x->'wastePct',
                             'waterLiters', x->'waterLiters', 'ingredients', x->'ingredients', 'materials', x->'materials',
                             'equipment', x->'equipment', 'otherCosts', x->'otherCosts'),
          case when jsonb_typeof(x->'salePrice') = 'number' then (x->>'salePrice')::numeric end,
          private.num(x->'targetMarginPct', 30), x->'priceSnapshot', coalesce((x->>'sample')::boolean, false),
-         coalesce((x->>'storeVisible')::boolean, true), x->>'storeDescription', coalesce(x->'storeOptions', '[]'),
+         coalesce((x->>'storeVisible')::boolean, true), x->>'storeDescription', nullif(x->>'storeImage', ''), coalesce(x->'storeOptions', '[]'),
          coalesce(private.ts(x->'createdAt'), now()), coalesce(private.ts(x->'updatedAt'), now())
     from jsonb_array_elements(coalesce(d->'recipes', '[]')) x
   on conflict do nothing;
 
-  insert into public.cake_products (workspace_id, id, name, visible, config)
-  select ws, x->>'id', x->>'name', coalesce((x->>'visible')::boolean, true), x - 'image'
+  insert into public.cake_products (workspace_id, id, name, visible, image_path, config)
+  select ws, x->>'id', x->>'name', coalesce((x->>'visible')::boolean, true), nullif(x->>'image', ''), x - 'image'
     from jsonb_array_elements(coalesce(st->'cakes', '[]')) x
   on conflict do nothing;
 

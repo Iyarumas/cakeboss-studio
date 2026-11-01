@@ -18,7 +18,9 @@ import { BrandLockup } from '../components/BrandMark';
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { db } = useStore();
   // the Básico plan has no public store: the menu says so and the shortcut to the store is hidden
-  const hasStore = useWorkspace().plan !== 'basico';
+  const ws = useWorkspace();
+  const hasStore = ws.features.includes('loja');
+  const storeHref = ws.slug ? `/loja/${ws.slug}` : '/loja';
   const loc = useLocation();
   // "/fichas" and "/fichas?aba=bolos" share a path: tell them apart by the query
   const activeFor = (to: string, isActive: boolean) => (to.startsWith('/fichas') ? isActive && (to.includes('aba=bolos') === loc.search.includes('aba=bolos')) : isActive);
@@ -85,7 +87,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {hasStore && (
       <div className="border-t border-divider p-3">
         <a
-          href="/loja"
+          href={storeHref}
           target="_blank"
           rel="noreferrer"
           className="flex h-10 w-full items-center gap-3 rounded-lg bg-gradient-to-r from-pink to-pink-deep px-3 text-sm font-semibold text-white shadow-sm transition-[opacity,transform] duration-150 ease-out hover:opacity-95 active:scale-[0.97]"

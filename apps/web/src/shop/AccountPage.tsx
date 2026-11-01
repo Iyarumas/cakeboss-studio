@@ -23,7 +23,7 @@ const CUSTOMER_STATUS: Record<OrderStatus, { label: string; tone: 'gray' | 'lila
 
 export default function AccountPage() {
   const { db, ctx, saveCustomer } = useStore();
-  const { customer, account, requireLogin } = useShop();
+  const { customer, account, requireLogin, base } = useShop();
   const toast = useToast();
   const cities = activeZones(storeSettings(db.settings)).map((z) => z.city);
   const [name, setName] = useState(customer?.name ?? '');
@@ -84,7 +84,7 @@ export default function AccountPage() {
             <div className="p-10 text-center text-muted">
               <Package size={32} className="mx-auto mb-3 text-pink" />
               Você ainda não fez pedidos.{' '}
-              <Link to="/loja#cardapio" className="font-semibold text-pink hover:underline">
+              <Link to={`${base}#cardapio`} className="font-semibold text-pink hover:underline">
                 Ver cardápio
               </Link>
             </div>

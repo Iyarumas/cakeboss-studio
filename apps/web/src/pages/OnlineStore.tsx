@@ -23,8 +23,9 @@ export default function OnlineStorePage() {
   const set = (p: Partial<StoreSettings>) => setSt((s) => ({ ...s, ...p }));
   // cakes are saved on their own (from the cake editor), so they don't count as unsaved changes here
   const dirty = JSON.stringify({ ...st, cakes: null, promotions: null }) !== JSON.stringify({ ...storeSettings(db.settings), cakes: null, promotions: null });
-  const { plan } = useWorkspace();
-  const hasStore = plan !== 'basico';
+  const ws = useWorkspace();
+  const hasStore = ws.features.includes('loja');
+  const storePath = ws.slug ? `/loja/${ws.slug}` : '/loja';
   const cakes = storeSettings(db.settings).cakes ?? [];
   const priced = db.recipes.filter((r) => r.salePrice != null && r.salePrice > 0);
   const unpriced = db.recipes.filter((r) => !(r.salePrice != null && r.salePrice > 0));
@@ -45,7 +46,7 @@ export default function OnlineStorePage() {
         subtitle="O que os clientes veem e como compram: cidades atendidas, frete, retirada e produtos."
         actions={
           <>
-            <Link to="/loja" target="_blank" className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-subtle">
+            <Link to={storePath} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-subtle">
               <ExternalLink size={16} /> Abrir loja
             </Link>
             <Button variant="primary" onClick={save} disabled={!dirty}>

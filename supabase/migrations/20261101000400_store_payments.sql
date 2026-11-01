@@ -1,23 +1,6 @@
 -- CakeBoss · Fases 9 e 10 · Contas de pagamento das confeitarias (Mercado Pago / Stripe) e pagamentos dos pedidos
 -- O dinheiro das vendas vai para a conta conectada da própria confeitaria. Sem comissão da plataforma.
 
--- Estado visível da conexão (o painel lê; só o servidor escreve)
-create table public.payment_connections (
-  workspace_id uuid not null references public.workspaces(id) on delete cascade,
-  provider text not null check (provider in ('mercadopago', 'stripe')),
-  status text not null check (status in ('pending', 'connected', 'error', 'disconnected')),
-  mode text not null check (mode in ('test', 'live')),
-  account_id text,
-  account_label text,
-  methods text[] not null default '{}',
-  is_default boolean not null default false,
-  last_error text,
-  connected_at timestamptz,
-  updated_at timestamptz not null default now(),
-  primary key (workspace_id, provider)
-);
-create unique index payment_connections_one_default on public.payment_connections(workspace_id) where is_default;
-
 -- Tokens das contas conectadas: schema privado, fora da API. Os valores ficam cifrados no Supabase Vault;
 -- aqui guardamos só o id do segredo e a validade.
 create table private.payment_credentials (

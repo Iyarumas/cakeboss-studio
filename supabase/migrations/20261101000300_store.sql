@@ -5,6 +5,9 @@ create table public.store_settings (
   enabled boolean not null default false,
   display_name text,
   description text,
+  -- short line shown in the store's closing band
+  tagline text,
+  logo_path text,
   banner_path text,
   accent text,
   whatsapp text check (whatsapp is null or whatsapp ~ '^[0-9]{10,13}$'),
@@ -25,6 +28,23 @@ create table public.store_settings (
   updated_at timestamptz not null default now()
 );
 
+-- discounts the bakery runs on chosen products (local dates, inclusive)
+create table public.promotions (
+  workspace_id uuid not null references public.workspaces(id) on delete cascade,
+  id text not null default gen_random_uuid()::text,
+  name text not null check (char_length(name) between 1 and 60),
+  kind text not null check (kind in ('percent', 'off')),
+  value numeric(12,2) not null check (value > 0),
+  recipe_ids text[] not null default '{}',
+  starts_on date,
+  ends_on date,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  primary key (workspace_id, id),
+  constraint percent_below_100 check (kind <> 'percent' or value < 100),
+  constraint dates_in_order check (starts_on is null or ends_on is null or ends_on >= starts_on)
+);
+
 create table public.delivery_zones (
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   id text not null default gen_random_uuid()::text,
@@ -34,6 +54,24 @@ create table public.delivery_zones (
   active boolean not null default true,
   primary key (workspace_id, id)
 );
+
+-- (criada aqui porque a vitrine pública consulta a conexão de pagamento)
+-- Estado visível da conexão (o painel lê; só o servidor escreve)
+create table public.payment_connections (
+  workspace_id uuid not null references public.workspaces(id) on delete cascade,
+  provider text not null check (provider in ('mercadopago', 'stripe')),
+  status text not null check (status in ('pending', 'connected', 'error', 'disconnected')),
+  mode text not null check (mode in ('test', 'live')),
+  account_id text,
+  account_label text,
+  methods text[] not null default '{}',
+  is_default boolean not null default false,
+  last_error text,
+  connected_at timestamptz,
+  updated_at timestamptz not null default now(),
+  primary key (workspace_id, provider)
+);
+create unique index payment_connections_one_default on public.payment_connections(workspace_id) where is_default;
 
 -- ---------------------------------------------------------------------------
 -- Leitura pública da loja: só campos de vitrine, nunca custos, clientes ou financeiro.
@@ -53,7 +91,8 @@ begin
     'id', ws.id,
     'slug', ws.slug,
     'name', coalesce(st.display_name, ws.name),
-    'logo_path', ws.logo_path,
+    'logo_path', coalesce(st.logo_path, ws.logo_path),
+    'tagline', st.tagline,
     'banner_path', st.banner_path,
     'description', st.description,
     'accent', st.accent,
@@ -76,6 +115,11 @@ begin
                               'options', r.store_options, 'unit_label', r.composition->>'unitLabel') order by r.category, r.name)
                             from public.recipes r
                            where r.workspace_id = ws.id and r.store_visible and r.sale_price > 0 and not r.sample), '[]'::jsonb),
+    'promotions', coalesce((select jsonb_agg(jsonb_build_object('id', p.id, 'name', p.name, 'kind', p.kind, 'value', p.value, 'recipe_ids', to_jsonb(p.recipe_ids),
+                                'starts_on', p.starts_on, 'ends_on', p.ends_on))
+                              from public.promotions p
+                             where p.workspace_id = ws.id and p.active
+                               and (p.ends_on is null or p.ends_on >= (now() at time zone 'America/Sao_Paulo')::date)), '[]'::jsonb),
     'cakes', coalesce((select jsonb_agg(private.public_cake(c)) from public.cake_products c where c.workspace_id = ws.id and c.visible), '[]'::jsonb)
   );
 end;
@@ -111,3 +155,4 @@ grant execute on function public.slug_available(text) to authenticated;
 
 alter table public.store_settings enable row level security;
 alter table public.delivery_zones enable row level security;
+alter table public.promotions enable row level security;

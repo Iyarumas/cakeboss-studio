@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Cake, LogOut, Minus, Plus, ShoppingBag, Trash, User, X } from 'lucide-react';
 import { useStore } from '../store/store';
 import { money } from '@cakeboss/domain/format';
+import { normalizePhone } from '@cakeboss/domain/whatsapp';
 import { cleanSelection, lineKey, selectionLabel, storeProducts, storeSettings, unitPriceFor, type CartLine, type Selection } from '@cakeboss/domain/shop';
 import { currentAccount, signOut, type Account } from '../lib/shopAuth';
 import type { Customer, Promotion, Recipe } from '@cakeboss/domain/types';
@@ -42,6 +43,10 @@ interface ShopCtx {
   /** opens login/sign-up; `then` runs after a successful login */
   requireLogin: (then?: () => void) => void;
   openCart: () => void;
+  /** where this store lives: '/loja' (demo on this browser) or '/loja/<slug>' (a bakery's store in the cloud) */
+  base: string;
+  /** true for a bakery's real store: orders go to the bakery by WhatsApp until online checkout opens */
+  cloud: boolean;
   /** the baker's discounts; prices shown and charged already include the running ones */
   promotions: Promotion[];
 }
@@ -54,7 +59,7 @@ export const useShop = () => {
 };
 
 /** Public online store (route /loja). Uses the same data as the admin. */
-export default function ShopApp() {
+export default function ShopApp({ base = '/loja', cloud = false }: { base?: string; cloud?: boolean }) {
   const { db } = useStore();
   const navigate = useNavigate();
   const st = storeSettings(db.settings);
@@ -120,25 +125,33 @@ export default function ShopApp() {
     requireLogin: (then) => (account && customer ? then?.() : setAuth({ then })),
     openCart: () => setCartOpen(true),
     promotions: st.promotions ?? [],
+    base,
+    cloud,
   };
   const count = cart.reduce((a, l) => a + l.qty, 0);
   const logout = useCallback(() => {
     signOut();
     setAccount(null);
-    navigate('/loja');
-  }, [navigate]);
+    navigate(base);
+  }, [navigate, base]);
 
   return (
     <Ctx.Provider value={ctx}>
       <ToastProvider>
         <AccentStyle choice={db.settings.accentShop ?? db.settings.accentAdmin} />
         <div data-theme="light" data-surface="shop" style={shopTheme(!db.settings.accentShop)} className="min-h-screen overflow-x-clip bg-bg text-ink">
-          <div className="bg-warn-soft px-4 py-2 text-center text-[13px] text-ink">
-            <b>Modo demonstração:</b> cadastros e pedidos ficam salvos só neste navegador e ainda não chegam à confeitaria por outros aparelhos. Login com Google será ativado quando a loja estiver na nuvem.
-          </div>
+          {cloud ? (
+            <div className="bg-pink-soft px-4 py-2 text-center text-[13px] text-ink">
+              Monte seu pedido aqui e envie pelo WhatsApp da confeitaria. O pagamento online chega em breve.
+            </div>
+          ) : (
+            <div className="bg-warn-soft px-4 py-2 text-center text-[13px] text-ink">
+              <b>Modo demonstração:</b> cadastros e pedidos ficam salvos só neste navegador e ainda não chegam à confeitaria por outros aparelhos. Login com Google será ativado quando a loja estiver na nuvem.
+            </div>
+          )}
           <header className="sticky top-0 z-30 bg-surface">
             <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-              <Link to="/loja" className="flex items-center gap-2.5">
+              <Link to={base} className="flex items-center gap-2.5">
                 {st.logo ? (
                   <img src={st.logo} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-pink/30" />
                 ) : (
@@ -149,20 +162,20 @@ export default function ShopApp() {
                 <span className="shop-script text-2xl leading-none text-[rgb(74_38_24)]">{st.storeName?.trim() || db.settings.businessName || 'Confeitaria'}</span>
               </Link>
               <nav className="ml-6 hidden items-center gap-5 text-sm text-muted md:flex">
-                <a href="/loja#cardapio" className="hover:text-ink">
+                <a href={`${base}#cardapio`} className="hover:text-ink">
                   Cardápio
                 </a>
-                <a href="/loja#entrega" className="hover:text-ink">
+                <a href={`${base}#entrega`} className="hover:text-ink">
                   Entrega
                 </a>
-                <a href="/loja#pagamento" className="hover:text-ink">
+                <a href={`${base}#pagamento`} className="hover:text-ink">
                   Pagamento
                 </a>
               </nav>
               <div className="ml-auto flex items-center gap-2">
                 {account && customer ? (
                   <>
-                    <Link to="/loja/conta" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-subtle sm:flex">
+                    <Link to={`${base}/conta`} className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-subtle sm:flex">
                       <User size={16} /> {customer.name.split(' ')[0]}
                     </Link>
                     <button className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-ink" onClick={logout} aria-label="Sair" title="Sair">
@@ -274,7 +287,7 @@ export function useCartLines(): ShopLine[] {
 }
 
 function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { setQty, requireLogin } = useShop();
+  const { setQty, requireLogin, base, cloud } = useShop();
   const navigate = useNavigate();
   const lines = useCartLines();
   const subtotal = lines.reduce((a, l) => a + l.qty * l.unit, 0);
@@ -333,18 +346,22 @@ function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                     <b className="tabular">{money(subtotal)}</b>
                   </div>
                   <p className="mt-1 text-xs text-muted">Frete calculado na próxima etapa, conforme sua cidade.</p>
-                  <Button
-                    variant="primary"
-                    className="mt-4 h-12 w-full text-base"
-                    onClick={() =>
-                      requireLogin(() => {
-                        onClose();
-                        navigate('/loja/finalizar');
-                      })
-                    }
-                  >
-                    Finalizar pedido
-                  </Button>
+                  {cloud ? (
+                    <WhatsAppOrderButton />
+                  ) : (
+                    <Button
+                      variant="primary"
+                      className="mt-4 h-12 w-full text-base"
+                      onClick={() =>
+                        requireLogin(() => {
+                          onClose();
+                          navigate(`${base}/finalizar`);
+                        })
+                      }
+                    >
+                      Finalizar pedido
+                    </Button>
+                  )}
                 </div>
               </>
             )}
@@ -392,5 +409,31 @@ export function Section({ id, children, className }: { id?: string; children: Re
     <section id={id} className={cx('mx-auto max-w-6xl scroll-mt-24 px-4', className)}>
       {children}
     </section>
+  );
+}
+
+/** Until online checkout opens, a bakery's store sends the cart to its WhatsApp, already written out. */
+function WhatsAppOrderButton() {
+  const { db } = useStore();
+  const lines = useCartLines();
+  const st = storeSettings(db.settings);
+  const wa = normalizePhone(st.whatsapp);
+  const total = lines.reduce((a, l) => a + l.qty * l.unit, 0);
+  const text = [
+    `Olá! Quero fazer um pedido na ${st.storeName?.trim() || db.settings.businessName}:`,
+    ...lines.map((l) => `• ${l.qty}× ${l.p.name}${l.label ? ` (${l.label})` : ''}: ${money(l.qty * l.unit)}`),
+    `Total dos produtos: ${money(total)}`,
+    'Pode me passar a data, o frete e a forma de pagamento?',
+  ].join('\n');
+  if (!wa) return <p className="mt-4 rounded-xl bg-subtle p-3 text-sm">Para pedir, fale com a confeitaria. Ela ainda não cadastrou o WhatsApp da loja.</p>;
+  return (
+    <a
+      href={`https://wa.me/${wa}?text=${encodeURIComponent(text)}`}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-pink text-base font-semibold text-white transition-transform duration-150 ease-out active:scale-[0.98]"
+    >
+      Enviar pedido pelo WhatsApp
+    </a>
   );
 }

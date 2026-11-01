@@ -80,7 +80,7 @@ insert into public.workspace_members values
 insert into public.workspace_data (workspace_id, data) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '{
      "version": 1,
-     "settings": {"businessName": "Doces da Ana", "ownerName": "Ana", "store": {"enabled": true, "whatsapp": "(47) 99999-0001", "leadDays": 2, "zones": [{"id": "z1", "city": "Navegantes", "fee": 10}, {"id": "z2", "city": "Penha", "fee": null}]}},
+     "settings": {"businessName": "Doces da Ana", "ownerName": "Ana", "store": {"enabled": true, "storeName": "Doces da Ana", "tagline": "Feito com carinho", "promotions": [{"id": "pr1", "name": "Semana do brigadeiro", "kind": "percent", "value": 20, "recipeIds": ["r1"], "startsOn": null, "endsOn": null, "active": true}, {"id": "pr2", "name": "inválida", "kind": "percent", "value": 150, "recipeIds": ["r1"], "active": true}], "whatsapp": "(47) 99999-0001", "leadDays": 2, "zones": [{"id": "z1", "city": "Navegantes", "fee": 10}, {"id": "z2", "city": "Penha", "fee": null}]}},
      "ingredients": [{"id": "i1", "name": "Leite condensado", "unit": "g", "packageQty": 395, "packagePrice": 7.5, "supplier": "", "stock": 790, "minStock": 395, "priceHistory": [], "updatedAt": "2026-10-01T10:00:00Z"}],
      "materials": [],
      "recipes": [{"id": "r1", "name": "Brigadeiro", "category": "Docinhos", "yield": 25, "unitLabel": "un", "prepMinutes": 40, "wastePct": 0, "waterLiters": 0, "ingredients": [{"ingredientId": "i1", "qty": 395, "unit": "g"}], "materials": [], "equipment": [], "otherCosts": [], "salePrice": 3.5, "targetMarginPct": 30, "priceSnapshot": null, "createdAt": "2026-10-01T10:00:00Z", "updatedAt": "2026-10-01T10:00:00Z"}],

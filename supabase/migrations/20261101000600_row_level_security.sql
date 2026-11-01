@@ -100,13 +100,17 @@ create policy "loja vê seus compradores" on public.shoppers for select to authe
   exists (select 1 from public.customers c where c.shopper_id = shoppers.user_id and (select private.is_member(c.workspace_id))));
 create policy "comprador vê sua ficha na loja" on public.customers for select to authenticated using (shopper_id = (select auth.uid()));
 
--- Loja: configuração é dos gestores; publicar exige plano com loja
+-- Loja: configuração é dos gestores. Montar a loja é livre em qualquer plano; ela só aparece ao público
+-- quando o plano inclui loja (conferido em get_store), então o Básico pode deixar tudo pronto.
 create policy "membros leem loja" on public.store_settings for select to authenticated using ((select private.is_member(workspace_id)));
 create policy "gestores configuram loja" on public.store_settings for all to authenticated
-  using ((select private.is_manager(workspace_id)))
-  with check ((select private.is_manager(workspace_id)) and (not enabled or private.has_feature(workspace_id, 'loja')));
+  using ((select private.is_manager(workspace_id))) with check ((select private.is_manager(workspace_id)));
 create policy "membros leem zonas" on public.delivery_zones for select to authenticated using ((select private.is_member(workspace_id)));
 create policy "gestores editam zonas" on public.delivery_zones for all to authenticated
+  using ((select private.is_manager(workspace_id))) with check ((select private.is_manager(workspace_id)));
+
+create policy "membros leem promoções" on public.promotions for select to authenticated using ((select private.is_member(workspace_id)));
+create policy "gestores editam promoções" on public.promotions for all to authenticated
   using ((select private.is_manager(workspace_id))) with check ((select private.is_manager(workspace_id)));
 
 -- Perfil da confeitaria: gestores editam nome e dados comerciais (plano e dono nunca)
