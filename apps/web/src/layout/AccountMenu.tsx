@@ -7,14 +7,15 @@ import { useWorkspace } from '../cloud/WorkspaceGate';
 import { PLAN_LABEL } from '../lib/supabase';
 import { Badge, cx } from '../components/ui';
 
-/** Quiet save status next to the avatar: only "Salvando…" and errors draw attention. */
+/** Save status next to the avatar: shown only when saving fails, so the person knows to stay online. */
 export function SaveIndicator() {
   const { saveState } = useWorkspace();
+  if (saveState !== 'erro') return null;
   const label = { salvo: 'Salvo na nuvem', pendente: 'Salvando…', salvando: 'Salvando…', erro: 'Sem conexão — tentando de novo' }[saveState];
   return (
     <span role="status" aria-live="polite" title={label} className={cx('hidden items-center gap-1.5 text-xs md:inline-flex', saveState === 'erro' ? 'font-medium text-loss' : 'text-muted')}>
       {saveState === 'erro' ? <CloudOff size={14} /> : saveState === 'salvo' ? <Check size={14} className="text-profit" /> : <Loader2 size={14} className="animate-spin" />}
-      <span className="hidden xl:inline">{label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </span>
   );
 }
@@ -25,6 +26,8 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // full name from sign-up, falling back to the name typed in Configurações
+  const displayName = ((user?.user_metadata?.full_name as string | undefined) || ownerName || '').trim();
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,9 +59,10 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Conta"
-        className="grid h-8 w-8 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac ring-1 ring-lilac/20 transition-[background-color,color,transform] duration-150 ease-out hover:bg-lilac hover:text-white active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40"
+        className="group flex h-9 items-center gap-2 rounded-full pl-1 pr-1 transition-[background-color,transform] duration-150 ease-out hover:bg-subtle active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/40 md:pl-3"
       >
-        {initials}
+        {displayName && <span className="hidden max-w-[220px] truncate text-sm font-semibold text-ink md:inline">{displayName}</span>}
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lilac-soft text-xs font-semibold text-lilac ring-1 ring-lilac/20">{initials}</span>
       </button>
       <AnimatePresence>
         {open && (
