@@ -46,10 +46,16 @@ export default function OnlineStorePage() {
         subtitle="O que os clientes veem e como compram: cidades atendidas, frete, retirada e produtos."
         actions={
           <>
-            <Link to={storePath} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-subtle">
-              <ExternalLink size={16} /> Abrir loja
-            </Link>
-            <Button variant="primary" onClick={save} disabled={!dirty}>
+            {hasStore ? (
+              <Link to={storePath} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-subtle">
+                <ExternalLink size={16} /> Abrir loja
+              </Link>
+            ) : (
+              <span aria-disabled="true" title="A loja online não faz parte do plano Básico" className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-lg border border-line bg-subtle px-4 text-sm font-medium text-muted">
+                <Lock size={16} /> Abrir loja
+              </span>
+            )}
+            <Button variant="primary" onClick={save} disabled={!dirty || !hasStore}>
               {dirty ? 'Salvar alterações' : 'Salvo'}
             </Button>
           </>
@@ -60,9 +66,9 @@ export default function OnlineStorePage() {
           <Lock size={20} className="shrink-0 text-pink" />
           <div className="min-w-0 flex-1 text-sm">
             <b className="block text-[15px]">A loja online não faz parte do plano Básico</b>
-            Você pode montar a loja aqui, mas ela não aparece para os clientes. Ela é liberada nos planos Premium e Plus.
+            Nos planos Premium e Plus você monta a loja com a sua marca e recebe pedidos dos clientes.
           </div>
-          <Link to="/conheca#planos" className="inline-flex h-10 items-center rounded-lg bg-pink px-4 text-sm font-medium text-white hover:bg-pink/90">
+          <Link to="/plano" className="inline-flex h-10 items-center rounded-lg bg-pink px-4 text-sm font-medium text-white hover:bg-pink/90">
             Ver planos
           </Link>
         </motion.div>
@@ -72,7 +78,12 @@ export default function OnlineStorePage() {
         pagamento pelo Mercado Pago, a loja precisa ser ligada à nuvem.
       </motion.div>
 
-      <div className="grid items-start gap-5 xl:grid-cols-2">
+      {/* Básico: the settings show blurred behind the notice and can't be used */}
+      <div
+        className={cx('grid items-start gap-5 xl:grid-cols-2', !hasStore && 'pointer-events-none select-none opacity-60 blur-[3px]')}
+        inert={!hasStore}
+        aria-hidden={!hasStore || undefined}
+      >
         <div className="space-y-5">
           <motion.div variants={stagger.item}>
             <Card>

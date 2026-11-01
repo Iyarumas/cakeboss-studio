@@ -2,12 +2,15 @@ import type { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 
 export type Mood = 'feliz' | 'preocupado' | 'falando' | 'animado';
-export type Character = 'docinho' | 'brigadinho' | 'mila';
+export type Character = 'docinho' | 'brigadinho' | 'mila' | 'fatinha' | 'rosquinha' | 'biscoitinho';
 
 export const CHARACTERS: { id: Character; name: string; description: string }[] = [
   { id: 'docinho', name: 'Docinho', description: 'Cupcake de morango, animado e falante' },
   { id: 'brigadinho', name: 'Brigadinho', description: 'Brigadeiro com granulado colorido, calmo e caprichoso' },
   { id: 'mila', name: 'Mila', description: 'Macaron de lavanda e menta, organizada e atenta' },
+  { id: 'fatinha', name: 'Fatinha', description: 'Fatia de bolo de chocolate com cereja, igual ao logo' },
+  { id: 'rosquinha', name: 'Rosquinha', description: 'Donut com cobertura rosa, a mais divertida' },
+  { id: 'biscoitinho', name: 'Biscoitinho', description: 'Cookie com gotas de chocolate, calmo e gentil' },
 ];
 
 export const characterName = (c: Character | undefined) => CHARACTERS.find((x) => x.id === c)?.name ?? 'Docinho';
@@ -65,6 +68,51 @@ const BODIES: Record<Character, { face: { y: number; light?: boolean }; shoulder
         <circle cx="61" cy="14" r="4" fill="#F9A8D4" />
         <circle cx="58" cy="15" r="2" fill="#EC4899" />
       </>
+    ),
+  },
+  fatinha: {
+    face: { y: 60, light: true },
+    shoulders: [13, 58, 67, 52],
+    body: (
+      <>
+        {/* slice of chocolate cake: sponge, two cream layers, ganache top and the logo's cherry */}
+        <path d="M12 42 L68 28 L68 82 Q40 85 12 82 Z" fill="#5B3A29" />
+        <path d="M12 56 L68 48 L68 54 L12 62 Z" fill="#F3E3C7" />
+        <path d="M12 70 L68 64 L68 70 L12 76 Z" fill="#F3E3C7" />
+        <path d="M10 42 L70 27 Q72 32 68 34 Q64 39 60 35 Q56 42 50 37 Q45 44 40 39 Q34 46 29 41 Q24 48 19 43 Q14 49 10 45 Z" fill="#3B2116" />
+        <ellipse cx="44" cy="29" rx="9" ry="4" fill="#FFF7ED" />
+        <path d="M46 24 Q48 14 55 11" stroke="#15803D" strokeWidth="2" fill="none" strokeLinecap="round" />
+        <circle cx="46" cy="23" r="5.5" fill="#DC2626" />
+        <circle cx="44.3" cy="21.2" r="1.6" fill="#fff" opacity="0.8" />
+      </>
+    ),
+  },
+  rosquinha: {
+    face: { y: 62 },
+    shoulders: [11, 56, 69, 56],
+    body: (
+      <g transform="translate(40 53) scale(0.92) translate(-40 -56)">
+        <circle cx="40" cy="56" r="31" fill="#D9A066" />
+        <path d="M11 52 Q12 26 40 25 Q68 26 69 52 Q66 58 62 54 Q60 63 55 57 Q50 62 46 58 Q40 64 35 58 Q29 63 26 57 Q20 61 18 55 Q13 58 11 52 Z" fill="#F472B6" />
+        <Sprinkles items={[[22, 38, 20, '#FDE047'], [31, 31, -30, '#fff'], [52, 32, 40, '#67E8F9'], [60, 42, -15, '#FDE047'], [27, 47, 60, '#67E8F9'], [56, 50, -50, '#fff'], [44, 29, 10, '#86EFAC']]} />
+        <circle cx="40" cy="44" r="6" fill="#FBF4EC" stroke="#C88A50" strokeWidth="2" />
+      </g>
+    ),
+  },
+  biscoitinho: {
+    face: { y: 50 },
+    shoulders: [10, 54, 70, 54],
+    body: (
+      <g transform="translate(40 52) scale(0.92) translate(-40 -54)">
+        {/* cookie with a bite taken out of the top right */}
+        <path d="M40 22 a32 32 0 1 0 31.6 27.5 a6 6 0 0 1 -6 -7 a6 6 0 0 1 -6 -9 a6 6 0 0 1 -7 -6.5 A32 32 0 0 0 40 22 Z" fill="#E0A95F" />
+        <path d="M40 26 a28 28 0 1 0 27.5 24" stroke="#C4873E" strokeWidth="2" fill="none" opacity="0.6" />
+        <ellipse cx="24" cy="40" rx="3.6" ry="3" fill="#4A2A1A" />
+        <ellipse cx="38" cy="33" rx="3" ry="2.6" fill="#4A2A1A" />
+        <ellipse cx="57" cy="66" rx="3.4" ry="2.8" fill="#4A2A1A" />
+        <ellipse cx="22" cy="66" rx="3" ry="2.5" fill="#4A2A1A" />
+        <ellipse cx="44" cy="76" rx="3.2" ry="2.6" fill="#4A2A1A" />
+      </g>
     ),
   },
 };
@@ -193,9 +241,8 @@ export function MascotSvg({
             </>
           ) : celebrating ? (
             <>
-              {/* sign held up on a stick by the right hand, left hand cheering */}
-              <line x1={rx + 6} y1={ry - 22} x2={rx + 6} y2={-6} stroke="#A16207" strokeWidth="2.5" strokeLinecap="round" />
-              <motion.g animate={jump ? { rotate: [-3, 3, -3] } : { rotate: 0 }} transition={{ duration: 0.55, repeat: jump ? Infinity : 0 }} style={{ originX: '40px', originY: '-6px' }}>
+              {/* sign held up over the head with both hands, one at each bottom corner */}
+              <g>
                 <rect x="-14" y="-36" width="108" height="30" rx="7" fill="#FFF7ED" stroke="#DB2777" strokeWidth="2" />
                 <text x="40" y={line2 ? -24 : -17} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#9D174D" fontFamily="Inter, system-ui, sans-serif">
                   {line1}
@@ -205,13 +252,11 @@ export function MascotSvg({
                     {line2}
                   </text>
                 )}
-              </motion.g>
-              {arm(`M${rx} ${ry} Q${rx + 6} ${ry - 10} ${rx + 6} ${ry - 20}`)}
-              {hand(rx + 6, ry - 21)}
-              <motion.g animate={jump ? { rotate: [0, -18, 0] } : { rotate: 0 }} transition={{ duration: 0.55, repeat: jump ? Infinity : 0 }} style={{ originX: `${lx}px`, originY: `${ly}px` }}>
-                {arm(`M${lx} ${ly} Q${lx - 8} ${ly - 10} ${lx - 9} ${ly - 22}`)}
-                {hand(lx - 9, ly - 23)}
-              </motion.g>
+              </g>
+              {arm(`M${lx} ${ly} Q${lx - 12} ${ly - 30} 6 -4`)}
+              {hand(6, -5)}
+              {arm(`M${rx} ${ry} Q${rx + 12} ${ry - 30} 74 -4`)}
+              {hand(74, -5)}
             </>
           ) : (
             <>
