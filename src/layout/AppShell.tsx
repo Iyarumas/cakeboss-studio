@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowUpRight, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
+import { Lock, ArrowUpRight, Menu, Moon, Plus, Search, Sparkles, Store, Sun, X } from 'lucide-react';
 import { useStore } from '../store/store';
 import { Button, IconButton, cx } from '../components/ui';
 import { useToast } from '../components/motion';
@@ -12,10 +12,13 @@ import { qtyBase } from '../lib/format';
 import { NAV } from './nav';
 import { AccountMenu, SaveIndicator } from './AccountMenu';
 import { AccentStyle } from '../components/AccentPicker';
+import { useWorkspace } from '../cloud/WorkspaceGate';
 import { BrandLockup } from '../components/BrandMark';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { db } = useStore();
+  // the Básico plan has no public store: the menu says so and the shortcut to the store is hidden
+  const hasStore = useWorkspace().plan !== 'basico';
   const loc = useLocation();
   // "/fichas" and "/fichas?aba=bolos" share a path: tell them apart by the query
   const activeFor = (to: string, isActive: boolean) => (to.startsWith('/fichas') ? isActive && (to.includes('aba=bolos') === loc.search.includes('aba=bolos')) : isActive);
@@ -67,6 +70,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                             {dueOrders}
                           </span>
                         )}
+                        {it.to === '/loja-online' && !hasStore && <Lock size={14} className="relative text-muted" aria-label="Não incluída no plano Básico" />}
                         {it.to === '/estoque' && lowStock > 0 && <span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-warn px-1.5 text-[11px] font-semibold text-white">{lowStock}</span>}
                       </>
                       );
@@ -78,6 +82,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
+      {hasStore && (
       <div className="border-t border-divider p-3">
         <a
           href="/loja"
@@ -90,6 +95,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <ArrowUpRight size={16} aria-hidden="true" />
         </a>
       </div>
+      )}
     </div>
   );
 }

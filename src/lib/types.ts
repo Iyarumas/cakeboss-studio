@@ -261,6 +261,29 @@ export interface StoreSettings {
   zones: DeliveryZone[];
   /** cakes the customer builds: size + massa + fillings + topping, priced from the fichas técnicas */
   cakes?: CakeProduct[];
+  /** discounts the baker runs on chosen products */
+  promotions?: Promotion[];
+  /** store's own logo (small data URL until photos move to Storage) and the name shown on the store */
+  logo?: string;
+  storeName?: string;
+  /** short line under the store name, e.g. "Delícias artesanais, feitas com carinho" */
+  tagline?: string;
+}
+
+/** A discount on chosen store products, optionally limited to a date range (local dates, inclusive). */
+export interface Promotion {
+  id: string;
+  name: string;
+  /** percent: value is % off · off: value is R$ off each unit */
+  kind: 'percent' | 'off';
+  value: number;
+  recipeIds: string[];
+  /** yyyy-mm-dd or null for "from now" / "no end" */
+  startsOn: string | null;
+  endsOn: string | null;
+  /** paused promotions stay saved but do not apply */
+  active: boolean;
+  createdAt: string;
 }
 
 /** A part of a built cake, pointing to the ficha técnica of ONE layer at the reference size. */

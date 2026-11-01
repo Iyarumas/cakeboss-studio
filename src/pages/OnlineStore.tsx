@@ -11,7 +11,9 @@ import { Badge, Button, Card, CardHeader, Field, IconButton, NumberInput, PageHe
 import { Drawer, stagger, useToast } from '../components/motion';
 import { Cake } from 'lucide-react';
 import { OptionsEditor } from '../components/OptionsEditor';
-import { Layers } from 'lucide-react';
+import { Layers, Lock } from 'lucide-react';
+import { PromotionsCard } from '../components/PromotionsEditor';
+import { useWorkspace } from '../cloud/WorkspaceGate';
 
 /** Admin side of the online store: delivery cities and fees, pickup, lead time and which products appear. */
 export default function OnlineStorePage() {
@@ -20,14 +22,16 @@ export default function OnlineStorePage() {
   const [st, setSt] = useState<StoreSettings>(() => JSON.parse(JSON.stringify(storeSettings(db.settings))));
   const set = (p: Partial<StoreSettings>) => setSt((s) => ({ ...s, ...p }));
   // cakes are saved on their own (from the cake editor), so they don't count as unsaved changes here
-  const dirty = JSON.stringify({ ...st, cakes: null }) !== JSON.stringify({ ...storeSettings(db.settings), cakes: null });
+  const dirty = JSON.stringify({ ...st, cakes: null, promotions: null }) !== JSON.stringify({ ...storeSettings(db.settings), cakes: null, promotions: null });
+  const { plan } = useWorkspace();
+  const hasStore = plan !== 'basico';
   const cakes = storeSettings(db.settings).cakes ?? [];
   const priced = db.recipes.filter((r) => r.salePrice != null && r.salePrice > 0);
   const unpriced = db.recipes.filter((r) => !(r.salePrice != null && r.salePrice > 0));
   const storeOrders = db.orders.filter((o) => o.origin === 'loja');
 
   const save = () => {
-    updateSettings({ store: { ...st, cakes, zones: st.zones.map((z) => ({ ...z, city: z.city.trim() })).filter((z) => z.city) } }, 'Configurações da loja online atualizadas');
+    updateSettings({ store: { ...st, cakes, promotions: storeSettings(db.settings).promotions, zones: st.zones.map((z) => ({ ...z, city: z.city.trim() })).filter((z) => z.city) } }, 'Configurações da loja online atualizadas');
     toast('Loja online salva');
   };
   const toggleProduct = (r: Recipe, visible: boolean) => saveRecipe({ ...r, storeVisible: visible });
@@ -50,6 +54,18 @@ export default function OnlineStorePage() {
           </>
         }
       />
+      {!hasStore && (
+        <motion.div variants={stagger.item} role="status" className="mb-5 flex flex-wrap items-center gap-4 rounded-card border border-pink/30 bg-pink-soft px-5 py-4">
+          <Lock size={20} className="shrink-0 text-pink" />
+          <div className="min-w-0 flex-1 text-sm">
+            <b className="block text-[15px]">A loja online não faz parte do plano Básico</b>
+            Você pode montar a loja aqui, mas ela não aparece para os clientes. Ela é liberada nos planos Premium e Plus.
+          </div>
+          <Link to="/conheca#planos" className="inline-flex h-10 items-center rounded-lg bg-pink px-4 text-sm font-medium text-white hover:bg-pink/90">
+            Ver planos
+          </Link>
+        </motion.div>
+      )}
       <motion.div variants={stagger.item} className="mb-5 rounded-card border border-warn/30 bg-warn-soft px-4 py-3 text-sm">
         <b>Modo demonstração.</b> A loja já funciona, mas os cadastros e pedidos ficam salvos só neste navegador. Para clientes comprarem do celular deles, com login pelo Google e
         pagamento pelo Mercado Pago, a loja precisa ser ligada à nuvem.
@@ -61,6 +77,33 @@ export default function OnlineStorePage() {
             <Card>
               <CardHeader icon={<Store size={16} />} title="Geral" />
               <div className="space-y-4 p-5">
+                <div className="flex items-center gap-4">
+                  <label className="relative grid h-20 w-20 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-full border-2 border-dashed border-pink/40 bg-pink-soft text-center text-[11px] text-pink hover:border-pink">
+                    {st.logo ? <img src={st.logo} alt="Logo da loja" className="h-full w-full object-cover" /> : <span className="px-2">Enviar logo</span>}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (f) set({ logo: await shrinkImage(f, 360, 0.86) });
+                      }}
+                    />
+                  </label>
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <Field label="Nome da loja" hint="Em branco, usamos o nome da confeitaria.">
+                      <TextInput value={st.storeName ?? ''} onChange={(e) => set({ storeName: e.target.value })} placeholder={db.settings.businessName} maxLength={60} />
+                    </Field>
+                    {st.logo && (
+                      <button type="button" onClick={() => set({ logo: undefined })} className="text-xs font-medium text-loss hover:underline">
+                        Remover logo
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <Field label="Frase da loja" hint="Aparece no rodapé da loja.">
+                  <TextInput value={st.tagline ?? ''} onChange={(e) => set({ tagline: e.target.value })} placeholder="Delícias artesanais, feitas com carinho" maxLength={80} />
+                </Field>
                 <label className="flex items-center justify-between gap-3">
                   <span>
                     <span className="block text-sm font-medium">Loja aberta</span>
@@ -222,6 +265,10 @@ export default function OnlineStorePage() {
               )}
               {unpriced.length > 0 && <p className="border-t border-divider px-5 py-3 text-xs text-muted">Sem preço (não aparecem): {unpriced.map((r) => r.name).join(', ')}</p>}
             </Card>
+          </motion.div>
+
+          <motion.div variants={stagger.item}>
+            <PromotionsCard />
           </motion.div>
 
           <motion.div variants={stagger.item}>

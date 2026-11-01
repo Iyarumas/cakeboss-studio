@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Check, ShoppingBag, X } from 'lucide-react';
 import { money } from '../lib/format';
 import { missingChoices, selectionLabel, unitPriceFor, type Selection } from '../lib/shop';
+import { promoPrice, promotionLabel } from '../lib/promotions';
 import type { OptionGroup, Recipe } from '../lib/types';
 import { Button, cx } from '../components/ui';
 import { AnimatedCounter, useToast } from '../components/motion';
@@ -73,7 +74,9 @@ export function ProductDialog({ recipe, onClose }: { recipe: Recipe | null; onCl
   }, [recipe, onClose]);
 
   const groups = (recipe?.storeOptions ?? []).filter((g) => g.choices.length);
-  const unit = recipe ? unitPriceFor(recipe, sel) : 0;
+  const { promotions } = useShop();
+  const base = recipe ? unitPriceFor(recipe, sel) : 0;
+  const { price: unit, promo } = recipe ? promoPrice(recipe.id, base, promotions) : { price: 0, promo: null };
   const missing = recipe ? missingChoices(recipe, sel) : [];
   const [emoji, grad] = recipe ? artFor(recipe) : ['', ''];
 
@@ -133,6 +136,11 @@ export function ProductDialog({ recipe, onClose }: { recipe: Recipe | null; onCl
                   <div className="mt-2 text-sm text-muted">
                     {money(recipe.salePrice ?? 0)} por {recipe.unitLabel}
                     {groups.length > 0 && ' (preço base)'}
+                    {promo && (
+                      <span className="ml-2 rounded-full bg-pink px-2 py-0.5 text-xs font-semibold text-white">
+                        {promo.name}: {promotionLabel(promo)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {groups.map((g) => (

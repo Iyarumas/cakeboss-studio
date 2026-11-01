@@ -6,12 +6,14 @@ import { useStore } from '../store/store';
 import { money } from '../lib/format';
 import { cleanSelection, lineKey, selectionLabel, storeProducts, storeSettings, unitPriceFor, type CartLine, type Selection } from '../lib/shop';
 import { currentAccount, signOut, type Account } from '../lib/shopAuth';
-import type { Customer, Recipe } from '../lib/types';
+import type { Customer, Promotion, Recipe } from '../lib/types';
+import { promoPrice } from '../lib/promotions';
 import { Button, cx } from '../components/ui';
 import { ToastProvider } from '../components/motion';
 import { AccentStyle } from '../components/AccentPicker';
 import { AuthDialog } from './AuthDialog';
 import ShopHome from './ShopHome';
+import { ChocolateFooterBand } from './ShelfHome';
 import Checkout from './Checkout';
 import AccountPage from './AccountPage';
 import { ProductDialog } from './ProductDialog';
@@ -40,6 +42,8 @@ interface ShopCtx {
   /** opens login/sign-up; `then` runs after a successful login */
   requireLogin: (then?: () => void) => void;
   openCart: () => void;
+  /** the baker's discounts; prices shown and charged already include the running ones */
+  promotions: Promotion[];
 }
 
 const Ctx = createContext<ShopCtx | null>(null);
@@ -115,6 +119,7 @@ export default function ShopApp() {
     refreshAuth: () => setAccount(currentAccount()),
     requireLogin: (then) => (account && customer ? then?.() : setAuth({ then })),
     openCart: () => setCartOpen(true),
+    promotions: st.promotions ?? [],
   };
   const count = cart.reduce((a, l) => a + l.qty, 0);
   const logout = useCallback(() => {
@@ -134,10 +139,14 @@ export default function ShopApp() {
           <header className="sticky top-0 z-30 bg-surface">
             <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
               <Link to="/loja" className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-pink to-lilac text-white shadow-sm">
-                  <Cake size={18} />
-                </span>
-                <span className="font-bold tracking-tight">{db.settings.businessName || 'Confeitaria'}</span>
+                {st.logo ? (
+                  <img src={st.logo} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-pink/30" />
+                ) : (
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-pink text-white">
+                    <Cake size={18} />
+                  </span>
+                )}
+                <span className="shop-script text-2xl leading-none text-[rgb(74_38_24)]">{st.storeName?.trim() || db.settings.businessName || 'Confeitaria'}</span>
               </Link>
               <nav className="ml-6 hidden items-center gap-5 text-sm text-muted md:flex">
                 <a href="/loja#cardapio" className="hover:text-ink">
@@ -193,7 +202,8 @@ export default function ShopApp() {
             </Routes>
           )}
 
-          <footer className="mt-32 bg-surface">
+          <ChocolateFooterBand />
+          <footer className="bg-surface">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:justify-between">
               <span>
                 © {new Date().getFullYear()} {db.settings.businessName || 'Confeitaria'} · Navegantes e região
@@ -256,7 +266,7 @@ export function useCartLines(): ShopLine[] {
           const p = products.find((x) => x.id === l.recipeId);
           if (!p) return null;
           const options = cleanSelection(p, l.options);
-          return { key: l.key, qty: l.qty, p, unit: unitPriceFor(p, options), label: selectionLabel(p, options), recipeId: p.id };
+          return { key: l.key, qty: l.qty, p, unit: promoPrice(p.id, unitPriceFor(p, options), storeSettings(db.settings).promotions).price, label: selectionLabel(p, options), recipeId: p.id };
         })
         .filter((l): l is ShopLine => !!l),
     [cart, products, cakes, db.recipes, ctx, db.settings],
