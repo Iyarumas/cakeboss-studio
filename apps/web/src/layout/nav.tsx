@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Boxes, Calculator, Cake, ClipboardList, Factory, Flame, LayoutDashboard, Package, ScrollText, Settings, ShoppingBag, ShoppingCart, Store, Users, Wallet, Wheat } from 'lucide-react';
+import { Boxes, Calculator, Cake, ClipboardList, CreditCard, Factory, Flame, LayoutDashboard, Package, ScrollText, Settings, ShoppingBag, ShoppingCart, Store, Users, Wallet, Wheat } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -46,6 +46,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { to: '/historico', label: 'Histórico', icon: <ScrollText size={18} />, keywords: 'atividade log' },
       { to: '/configuracoes', label: 'Configurações', icon: <Settings size={18} />, keywords: 'backup tema whatsapp' },
+      { to: '/plano', label: 'Plano e assinatura', icon: <CreditCard size={18} />, keywords: 'assinatura cobranca mensalidade pagamento pix cartao' },
     ],
   },
 ];

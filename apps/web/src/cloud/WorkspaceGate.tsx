@@ -10,6 +10,7 @@ import { Button, Field, TextInput } from '../components/ui';
 import { BrandMark } from '../components/BrandMark';
 import { BRAND_DRAFT_KEY } from '../landing/draft';
 import { loadTenant, saveDiff } from './tables';
+import { PayButtons } from '../pages/Subscription';
 
 export type SaveState = 'salvo' | 'pendente' | 'salvando' | 'erro';
 
@@ -181,22 +182,28 @@ function ChoosePlan({ id, name, access, onChanged }: { id: string; name: string;
   const { signOut } = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // trial days the server offered for the plan just chosen (it decides again at checkout)
+  const [trialDays, setTrialDays] = useState(0);
   const choose = async (plan: string) => {
     setBusy(plan);
     setError('');
-    const { error: err } = await supabase.rpc('choose_plan', { ws: id, plan });
+    const { data, error: err } = await supabase.rpc('choose_plan', { ws: id, plan });
     setBusy(null);
     if (err) return setError('Não foi possível registrar o plano agora. Tente de novo.');
+    setTrialDays((data as { trial_days?: number } | null)?.trial_days ?? 0);
     onChanged();
   };
   const waiting = access.status === 'billing_not_configured' || access.status === 'pending_payment';
+  const canPay = access.status === 'pending_payment';
   return (
     <div className="min-h-screen bg-bg px-4 py-10">
       <div className="mx-auto max-w-4xl">
         <BrandMark size={48} />
         <h1 className="mt-5 text-2xl font-extrabold">{waiting ? 'Plano escolhido' : `Escolha o plano da ${name}`}</h1>
         <p className="mt-1.5 max-w-2xl text-sm text-muted">
-          {waiting
+          {canPay
+            ? `Você escolheu o ${PLANS.find((p) => p.code === access.plan)?.name ?? 'plano'}. Falta só o pagamento para liberar o painel. Seus dados já estão guardados.`
+            : waiting
             ? `Você escolheu o ${PLANS.find((p) => p.code === access.plan)?.name ?? 'plano'}. As assinaturas do CakeBoss abrem em breve: assim que a cobrança começar, você cadastra o cartão ou paga no Pix e o painel é liberado. Seus dados já estão guardados.`
             : 'As assinaturas abrem em breve. Escolha agora o plano que quer usar; quando a cobrança começar, você cadastra o cartão ou paga no Pix e o painel é liberado.'}
         </p>
@@ -217,6 +224,13 @@ function ChoosePlan({ id, name, access, onChanged }: { id: string; name: string;
             </div>
           ))}
         </div>
+        {canPay && (
+          <div className="mt-6 rounded-card border border-line bg-surface p-5">
+            <div className="font-semibold">Concluir o pagamento</div>
+            <p className="mb-4 mt-1 text-sm text-muted">O pagamento abre no Mercado Pago. O CakeBoss não vê nem guarda os dados do seu cartão.</p>
+            <PayButtons workspaceId={id} trialDays={trialDays} onMessage={setError} />
+          </div>
+        )}
         {error && (
           <p role="alert" className="mt-4 rounded-lg border border-loss/25 bg-loss-soft px-3 py-2.5 text-sm text-loss">
             {error}

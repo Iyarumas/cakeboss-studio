@@ -200,3 +200,11 @@ docs/              auditoria, arquitetura, guias de configuração
 ```
 
 O servidor nunca importa código de tela, e o frontend nunca contém credenciais. As regras de preço ficam num pacote só para que o checkout no servidor calcule exatamente o mesmo valor mostrado na tela.
+
+## 13. Cobrança das assinaturas (Fase 8)
+
+- **Edge Function `supabase/functions/billing`** (Mercado Pago): `POST /billing/checkout` abre o checkout oficial (cartão com cobrança mensal e teste de 3 dias no Básico, ou Pix de um mês); `POST /billing/webhook` confere a assinatura do aviso (`x-signature`, HMAC com `MP_WEBHOOK_SECRET`, recusa avisos com mais de 10 min), **relê o estado na API do Mercado Pago** e só então grava, uma vez por evento.
+- Funções do banco só para o servidor (`service_role`): `billing_prepare_checkout`, `billing_attach`, `billing_start_trial`, `billing_apply` (migração `…1000_billing_server.sql`).
+- Acesso pago vence 3 dias depois do fim do período sem nova cobrança aprovada.
+- **Para ligar:** aplicar a migração, implantar a função com `--no-verify-jwt`, cadastrar `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e `APP_URL` nos segredos, apontar o webhook do Mercado Pago para `/functions/v1/billing/webhook` e, por fim, `update private.billing_settings set enabled = true, provider = 'mercadopago', mode = 'test'`. Testar em modo `test` antes de `live`.
+- Stripe: ainda não implementado (a função responde que o meio não está disponível).

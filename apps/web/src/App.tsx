@@ -18,6 +18,7 @@ import CustomersPage from './pages/Customers';
 import FinancePage from './pages/Finance';
 import OnlineStorePage from './pages/OnlineStore';
 import { HistoryPage, OperatingCostsPage, ProductionsPage, SettingsPage, StockPage } from './pages/Operations';
+import SubscriptionPage from './pages/Subscription';
 
 // the public store (with the 3D scene) is loaded only when someone opens /loja
 const ShopApp = lazy(() => import('./shop/ShopApp'));
@@ -91,6 +92,7 @@ function Admin() {
         <Route path="/custos" element={<OperatingCostsPage />} />
         <Route path="/historico" element={<HistoryPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
+        <Route path="/plano" element={<SubscriptionPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </motion.div>

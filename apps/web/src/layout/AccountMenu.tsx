@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, CloudOff, Loader2, LogOut, Settings } from 'lucide-react';
+import { Check, CloudOff, CreditCard, Loader2, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useWorkspace } from '../cloud/WorkspaceGate';
 import { PLAN_LABEL } from '../lib/supabase';
@@ -90,6 +90,17 @@ export function AccountMenu({ initials, ownerName }: { initials: string; ownerNa
                 }}
               >
                 <Settings size={16} className="text-muted" /> Configurações
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={item}
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/plano');
+                }}
+              >
+                <CreditCard size={16} className="text-muted" /> Plano e assinatura
               </button>
               <button type="button" role="menuitem" className={item} onClick={leave} disabled={leaving}>
                 {leaving ? <Loader2 size={16} className="animate-spin text-muted" /> : <LogOut size={16} className="text-muted" />}
