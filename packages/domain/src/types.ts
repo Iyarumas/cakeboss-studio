@@ -1,3 +1,5 @@
+export type MascotCharacter = 'docinho' | 'brigadinho' | 'mila' | 'fatinha' | 'rosquinha' | 'biscoitinho';
+
 export type Unit = 'g' | 'kg' | 'ml' | 'l' | 'un';
 export type MaterialKind = 'embalagem' | 'adesivo' | 'outro';
 export type EnergySource = 'gas' | 'energia';
@@ -85,9 +87,9 @@ export interface Settings {
   messageTemplates: MessageTemplate[];
   /** Docinho, the helper mascot (on unless turned off) */
   mascotEnabled?: boolean;
-  mascotCharacter?: 'docinho' | 'brigadinho' | 'mila';
+  mascotCharacter?: MascotCharacter;
   /** optional second mascot; when set, the two split the work by topic */
-  mascotSecond?: 'docinho' | 'brigadinho' | 'mila' | null;
+  mascotSecond?: MascotCharacter | null;
   /** job of the first mascot when there are two (the second takes the other) */
   mascotFirstRole?: 'pedidos' | 'financas';
   /** first-access welcome already shown */

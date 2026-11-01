@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
+import type { MascotCharacter } from '@cakeboss/domain/types';
 import { motion, useReducedMotion } from 'motion/react';
 
 export type Mood = 'feliz' | 'preocupado' | 'falando' | 'animado';
-export type Character = 'docinho' | 'brigadinho' | 'mila' | 'fatinha' | 'rosquinha' | 'biscoitinho';
+export type Character = MascotCharacter;
 
 export const CHARACTERS: { id: Character; name: string; description: string }[] = [
   { id: 'docinho', name: 'Docinho', description: 'Cupcake de morango, animado e falante' },
