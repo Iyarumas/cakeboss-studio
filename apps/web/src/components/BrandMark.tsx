@@ -17,12 +17,12 @@ export function BrandMark({ size = 40, className }: { size?: number; className?:
 /** The logo's own lettering ("CakeBoss" in chocolate and cream), cut from the logo file without changes. */
 export const WORDMARK_SRC = '/brand/cakeboss-wordmark.webp';
 
-/** Cake + lettering side by side, exactly as drawn in the logo. Lettering is 1105 × 297. */
+/** Cake + lettering side by side, exactly as drawn in the logo. Lettering is 1105 × 365 (`height` is the size of the letters, the swashes reach past it). */
 export function BrandLockup({ height = 32, markSize, className }: { height?: number; markSize?: number; className?: string }) {
   return (
     <span className={cx('inline-flex shrink-0 items-center gap-2', className)}>
       <img src={MARK_SRC} alt="" draggable={false} className="select-none object-contain" style={{ width: markSize ?? height * 1.35, height: markSize ?? height * 1.35 }} />
-      <img src={WORDMARK_SRC} alt="CakeBoss" draggable={false} className="select-none object-contain" style={{ height, width: Math.round((height * 1105) / 297) }} />
+      <img src={WORDMARK_SRC} alt="CakeBoss" draggable={false} className="select-none object-contain" style={{ height: Math.round((height * 365) / 297), width: Math.round((height * 1105) / 297) }} />
     </span>
   );
 }

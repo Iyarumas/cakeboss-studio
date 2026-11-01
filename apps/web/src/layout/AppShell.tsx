@@ -36,7 +36,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex items-center gap-3 border-b border-divider px-5 py-5">
         <div className="min-w-0">
           <BrandLockup height={30} />
-          <div className="mt-1 truncate text-xs text-muted">{db.settings.businessName || 'Confeitaria artesanal'}</div>
+          <div className="mt-2 truncate text-base font-bold leading-tight text-pink" title={db.settings.businessName || undefined}>{db.settings.businessName || 'Confeitaria artesanal'}</div>
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Principal">
